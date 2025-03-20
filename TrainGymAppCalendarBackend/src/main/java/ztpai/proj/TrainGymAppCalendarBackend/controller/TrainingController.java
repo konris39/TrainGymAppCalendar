@@ -50,4 +50,13 @@ public class TrainingController {
         Training savedTraining = trainingRepository.save(training);
         return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTrainingById(@PathVariable Integer id){
+        if(trainingRepository.existsById(id)){
+            trainingRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
