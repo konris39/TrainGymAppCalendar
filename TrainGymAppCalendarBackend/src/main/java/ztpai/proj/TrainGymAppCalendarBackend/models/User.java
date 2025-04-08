@@ -1,5 +1,6 @@
 package ztpai.proj.TrainGymAppCalendarBackend.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -16,8 +17,13 @@ public class User {
     private String name;
 
     @NotEmpty
-    @Column(name="user_mail", length = 100, nullable = false, unique = false)
+    @Column(name="user_mail", length = 100, nullable = false, unique = true)
     private String mail;
+
+    @NotEmpty
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @Column(name = "user_password", nullable = false)
+    private String password;
 
     @NotNull
     @Column(name="is_user_trainer", nullable = false, unique = false)
@@ -29,6 +35,7 @@ public class User {
         this.id = id;
         this.name = name;
         this.mail = mail;
+        this.password = password;
         this.trainer = trainer;
     }
     public void setId(Integer id) {
@@ -53,6 +60,14 @@ public class User {
 
     public String getMail(){
         return mail;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public void setTrainer(Boolean trainer){
