@@ -26,7 +26,7 @@ public class User {
     private String password;
 
     @NotNull
-    @Column(name="is_user_trainer", nullable = false, unique = false)
+    @Column(name="is_user_trainer", nullable = false, columnDefinition = "boolean default false")
     private boolean trainer;
 
     public User(){}
