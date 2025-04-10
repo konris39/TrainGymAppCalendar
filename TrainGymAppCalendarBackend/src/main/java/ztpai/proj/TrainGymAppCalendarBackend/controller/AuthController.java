@@ -1,12 +1,14 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
+import ztpai.proj.TrainGymAppCalendarBackend.security.JwtUtil;
 
 import java.util.Optional;
 
@@ -14,37 +16,43 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 @CrossOrigin
 public class AuthController {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    @Autowired
+    public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/register")
     public ResponseEntity<String> register(@Valid @RequestBody User user){
         if (userRepository.findByMail(user.getMail()).isPresent()){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User with that email already exists!");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Użytkownik o podanym mailu już istnieje!");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body("User created!");
+        return ResponseEntity.status(HttpStatus.CREATED).body("Użytkownik utworzony!");
     }
 
-    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request){
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
         Optional<User> userOptional = userRepository.findByMail(request.getMail());
         if(userOptional.isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Invalid email or password");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nieprawidłowy email lub hasło");
         }
 
         User user = userOptional.get();
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nieprawidłowy email lub hasło");
         }
-        return ResponseEntity.ok("User authenticated successfully");
+
+        String token = jwtUtil.generateToken(user.getMail());
+        return ResponseEntity.ok(new JwtResponse(token));
     }
 }

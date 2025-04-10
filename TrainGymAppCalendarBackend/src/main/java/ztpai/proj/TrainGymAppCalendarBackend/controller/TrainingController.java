@@ -1,9 +1,10 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ztpai.proj.TrainGymAppCalendarBackend.models.Training;
@@ -26,57 +27,50 @@ public class TrainingController {
         this.trainingRepository = trainingRepository;
         this.userRepository = userRepository;
     }
-    /*
-    @ResponseStatus(HttpStatus.OK)
-    @GetMapping("")
-    public List<Training> findAllTraining(){
-        return trainingRepository.findAll();
-    }
-     */
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("/all")
-    public List<Training> getAllTrainings(){
-        return trainingRepository.findAll();
-    }
-
-    // Endpoint do dodawania treningu (bez weryfikacji użytkownika)
-    @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/addPublic")
-    public ResponseEntity<Training> addTrainingPublic(@Valid @RequestBody Training training) {
-        // Możesz opcjonalnie ustawić trening.setUser(null) lub zignorować tą właściwość
-        Training savedTraining = trainingRepository.save(training);
-        return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
+    @GetMapping("/my")
+    public List<Training> getMyTrainings() {
+        User currentUser = getCurrentUser();
+        return trainingRepository.findAllByUserId(currentUser.getId());
     }
 
     @ResponseStatus(HttpStatus.OK)
-    @GetMapping("{userId}")
-    public List<Training> findTrainingByUserId(@PathVariable Integer userId){
-        userRepository.findUserById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-        return trainingRepository.findAllByUserId(userId);
-    }
-
-    @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/add/{userId}")
-    public ResponseEntity<Training> addTrainingToUser(@Valid @RequestBody Training training, @PathVariable Integer userId){
-        Optional<User> user = userRepository.findUserById(userId);
-        if(!user.isPresent()){
-            return ResponseEntity.notFound().build();
-        }
-        training.setUser(user.get());
-        Training savedTraining = trainingRepository.save(training);
-        return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
-    }
-
-    @DeleteMapping("/{userId}/{id}")
-    public ResponseEntity<Void> deleteUserTrainingById(@PathVariable Integer userId, @PathVariable Integer id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<Training> getMyTrainingById(@PathVariable Integer id) {
+        User currentUser = getCurrentUser();
         Optional<Training> trainingOptional = trainingRepository.findById(id);
         if (!trainingOptional.isPresent()) {
             return ResponseEntity.notFound().build();
         }
 
         Training training = trainingOptional.get();
-        if (training.getUser() == null || !training.getUser().getId().equals(userId)) {
+        if(training.getUser() == null || !training.getUser().getId().equals(currentUser.getId())){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(training);
+    }
+
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/add")
+    public ResponseEntity<Training> addTrainingToUser(@Valid @RequestBody Training training) {
+        User currentUser = getCurrentUser();
+        training.setUser(currentUser);
+        Training savedTraining = trainingRepository.save(training);
+        return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUserTrainingById(@PathVariable Integer id) {
+        User currentUser = getCurrentUser();
+        Optional<Training> trainingOptional = trainingRepository.findById(id);
+        if (!trainingOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Training training = trainingOptional.get();
+        if (training.getUser() == null || !training.getUser().getId().equals(currentUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -84,27 +78,26 @@ public class TrainingController {
         return ResponseEntity.noContent().build();
     }
 
-
-    @PatchMapping("/update/{userId}/{id}")
-    public ResponseEntity<Training> updateUserTraining(@Valid @RequestBody Training training, @PathVariable Integer userId, @PathVariable Integer id){
-
+    @PatchMapping("/update/{id}")
+    public ResponseEntity<Training> updateUserTraining(@Valid @RequestBody Training training, @PathVariable Integer id) {
+        User currentUser = getCurrentUser();
         Optional<Training> trainingOptional = trainingRepository.findById(id);
-        if(!trainingOptional.isPresent()){
+        if (!trainingOptional.isPresent()) {
             return ResponseEntity.notFound().build();
         }
 
         Training trainingToUpdate = trainingOptional.get();
-        if(trainingToUpdate.getUser() != null || !trainingToUpdate.getUser().getId().equals(userId)){
+        if (trainingToUpdate.getUser() == null || !trainingToUpdate.getUser().getId().equals(currentUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        if(training.getName() != null && training.getName().trim().isEmpty()){
+        if (training.getName() != null && !training.getName().trim().isEmpty()) {
             trainingToUpdate.setName(training.getName());
         }
-        if(training.getDescription() != null || !training.getDescription().trim().isEmpty()){
+        if (training.getDescription() != null && !training.getDescription().trim().isEmpty()) {
             trainingToUpdate.setDescription(training.getDescription());
         }
-        if(training.getTrainingDate() != null){
+        if (training.getTrainingDate() != null) {
             trainingToUpdate.setTrainingDate(training.getTrainingDate());
         }
 
@@ -112,15 +105,16 @@ public class TrainingController {
         return ResponseEntity.ok(trainingToUpdate);
     }
 
-    @PatchMapping("/complete/{userId}/{id}")
-    public ResponseEntity<Training> completeUserTraining(@Valid @RequestBody Training training, @PathVariable Integer userId, @PathVariable Integer id) {
+    @PatchMapping("/complete/{id}")
+    public ResponseEntity<Training> completeUserTraining(@Valid @RequestBody Training training, @PathVariable Integer id) {
+        User currentUser = getCurrentUser();
         Optional<Training> trainingOptional = trainingRepository.findById(id);
-        if(!trainingOptional.isPresent()){
+        if (!trainingOptional.isPresent()) {
             return ResponseEntity.notFound().build();
         }
 
         Training trainingToUpdate = trainingOptional.get();
-        if(trainingToUpdate.getUser() != null || !trainingToUpdate.getUser().getId().equals(userId)){
+        if (trainingToUpdate.getUser() == null || !trainingToUpdate.getUser().getId().equals(currentUser.getId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -129,4 +123,13 @@ public class TrainingController {
         return ResponseEntity.ok(trainingToUpdate);
     }
 
+    private User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Brak zalogowanego użytkownika.");
+        }
+        String email = auth.getName();
+        return userRepository.findByMail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika."));
+    }
 }
