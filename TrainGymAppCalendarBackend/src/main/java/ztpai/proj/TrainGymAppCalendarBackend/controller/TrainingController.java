@@ -1,5 +1,6 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +26,13 @@ public class TrainingController {
         this.trainingRepository = trainingRepository;
         this.userRepository = userRepository;
     }
-
+    /*
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("")
     public List<Training> findAllTraining(){
         return trainingRepository.findAll();
     }
+     */
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("{userId}")
@@ -40,7 +42,7 @@ public class TrainingController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @PostMapping("/{userId}/add")
+    @PostMapping("/add/{userId}")
     public ResponseEntity<Training> addTrainingToUser(@Valid @RequestBody Training training, @PathVariable Integer userId){
         Optional<User> user = userRepository.findUserById(userId);
         if(!user.isPresent()){
@@ -51,12 +53,65 @@ public class TrainingController {
         return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTrainingById(@PathVariable Integer id){
-        if(trainingRepository.existsById(id)){
-            trainingRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
+    @DeleteMapping("/{userId}/{id}")
+    public ResponseEntity<Void> deleteUserTrainingById(@PathVariable Integer userId, @PathVariable Integer id) {
+        Optional<Training> trainingOptional = trainingRepository.findById(id);
+        if (!trainingOptional.isPresent()) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+
+        Training training = trainingOptional.get();
+        if (training.getUser() == null || !training.getUser().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        trainingRepository.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
+
+
+    @PatchMapping("/update/{userId}/{id}")
+    public ResponseEntity<Training> updateUserTraining(@Valid @RequestBody Training training, @PathVariable Integer userId, @PathVariable Integer id){
+
+        Optional<Training> trainingOptional = trainingRepository.findById(id);
+        if(!trainingOptional.isPresent()){
+            return ResponseEntity.notFound().build();
+        }
+
+        Training trainingToUpdate = trainingOptional.get();
+        if(trainingToUpdate.getUser() != null || !trainingToUpdate.getUser().getId().equals(userId)){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if(training.getName() != null && training.getName().trim().isEmpty()){
+            trainingToUpdate.setName(training.getName());
+        }
+        if(training.getDescription() != null || !training.getDescription().trim().isEmpty()){
+            trainingToUpdate.setDescription(training.getDescription());
+        }
+        if(training.getTrainingDate() != null){
+            trainingToUpdate.setTrainingDate(training.getTrainingDate());
+        }
+
+        trainingRepository.save(trainingToUpdate);
+        return ResponseEntity.ok(trainingToUpdate);
+    }
+
+    @PatchMapping("/complete/{userId}/{id}")
+    public ResponseEntity<Training> completeUserTraining(@Valid @RequestBody Training training, @PathVariable Integer userId, @PathVariable Integer id) {
+        Optional<Training> trainingOptional = trainingRepository.findById(id);
+        if(!trainingOptional.isPresent()){
+            return ResponseEntity.notFound().build();
+        }
+
+        Training trainingToUpdate = trainingOptional.get();
+        if(trainingToUpdate.getUser() != null || !trainingToUpdate.getUser().getId().equals(userId)){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        trainingToUpdate.setCompleted(true);
+        trainingRepository.save(trainingToUpdate);
+        return ResponseEntity.ok(trainingToUpdate);
+    }
+
 }
