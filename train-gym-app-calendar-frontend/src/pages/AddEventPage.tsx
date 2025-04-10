@@ -293,4 +293,5 @@ const AddEventPage: React.FC = () => {
     );
 };
 
+
 export default AddEventPage;

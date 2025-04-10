@@ -325,4 +325,5 @@ const EditWorkoutPage: React.FC = () => {
     );
 };
 
+
 export default EditWorkoutPage;
