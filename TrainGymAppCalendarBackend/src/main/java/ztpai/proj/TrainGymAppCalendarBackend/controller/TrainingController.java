@@ -35,6 +35,21 @@ public class TrainingController {
      */
 
     @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/all")
+    public List<Training> getAllTrainings(){
+        return trainingRepository.findAll();
+    }
+
+    // Endpoint do dodawania treningu (bez weryfikacji użytkownika)
+    @ResponseStatus(HttpStatus.CREATED)
+    @PostMapping("/addPublic")
+    public ResponseEntity<Training> addTrainingPublic(@Valid @RequestBody Training training) {
+        // Możesz opcjonalnie ustawić trening.setUser(null) lub zignorować tą właściwość
+        Training savedTraining = trainingRepository.save(training);
+        return new ResponseEntity<>(savedTraining, HttpStatus.CREATED);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("{userId}")
     public List<Training> findTrainingByUserId(@PathVariable Integer userId){
         userRepository.findUserById(userId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

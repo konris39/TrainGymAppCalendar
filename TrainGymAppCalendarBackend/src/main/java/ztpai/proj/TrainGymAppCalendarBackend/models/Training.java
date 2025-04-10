@@ -2,6 +2,7 @@ package ztpai.proj.TrainGymAppCalendarBackend.models;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,7 +12,7 @@ public class Training {
     private Integer id;
     private String name;
     private String description;
-    private LocalDateTime trainingDate;
+    private LocalDate trainingDate;
     private boolean isCompleted;
 
     @ManyToOne
@@ -42,11 +43,11 @@ public class Training {
         this.description = description;
     }
 
-    public LocalDateTime getTrainingDate() {
+    public LocalDate getTrainingDate() {
         return trainingDate;
     }
 
-    public void setTrainingDate(LocalDateTime trainingDate) {
+    public void setTrainingDate(LocalDate trainingDate) {
         this.trainingDate = trainingDate;
     }
 
