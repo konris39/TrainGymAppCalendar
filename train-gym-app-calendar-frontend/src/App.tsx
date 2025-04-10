@@ -5,6 +5,7 @@ import RegisterPage from './pages/RegisterPage';
 import MainPage from './pages/MainPage';
 import AddEventPage from "./pages/AddEventPage";
 import YourWorkoutsPage from "./pages/YourWorkoutsPage";
+import EditWorkoutPage from "./pages/EditWorkoutPage";
 
 function App(): JSX.Element {
     return (
@@ -16,6 +17,7 @@ function App(): JSX.Element {
                 <Route path="/main" element={<MainPage />} />
                 <Route path="/add-workout" element={<AddEventPage />} />
                 <Route path="/your-workouts" element={<YourWorkoutsPage />} />
+                <Route path="/edit-workout/:id" element={<EditWorkoutPage />} />
             </Routes>
         </Router>
     );

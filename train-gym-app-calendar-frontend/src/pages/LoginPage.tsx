@@ -11,16 +11,18 @@ const LoginPage: React.FC = () => {
 
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
-
         try {
             const response = await axios.post('/api/auth/login', { mail, password });
-            console.log('Response:', response.data);
+            const { token } = response.data;
+            localStorage.setItem('token', token);
+            console.log('Response token:', token);
             navigate('/main');
         } catch (error: any) {
             console.error('Login error:', error);
             setErrorMessage('Niepoprawny email lub hasło');
         }
     };
+
 
     const textFieldStyle = {
         backgroundColor: 'rgba(235,235,235,0.65)',

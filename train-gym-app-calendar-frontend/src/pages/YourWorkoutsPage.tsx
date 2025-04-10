@@ -9,11 +9,20 @@ import {
     Card,
     CardContent,
     Collapse,
-    IconButton
+    IconButton,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions
 } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+
+import RefreshIcon from '@mui/icons-material/Refresh';
+import EditIcon from '@mui/icons-material/Edit';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface Workout {
     id: number;
@@ -28,9 +37,21 @@ const YourWorkoutsPage: React.FC = () => {
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
 
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
     const fetchWorkouts = () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
+            return;
+        }
         axios
-            .get(`/api/training/all`)
+            .get('/api/training/my', {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
             .then((res) => {
                 setWorkouts(res.data);
             })
@@ -49,6 +70,60 @@ const YourWorkoutsPage: React.FC = () => {
                 ? prev.filter((expandedId) => expandedId !== id)
                 : [...prev, id]
         );
+    };
+
+    const handleEdit = (id: number) => {
+        navigate(`/edit-workout/${id}`);
+    };
+
+    const handleComplete = (id: number) => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
+            return;
+        }
+        axios
+            .patch(`/api/training/complete/${id}`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(() => {
+                fetchWorkouts();
+            })
+            .catch((err) => {
+                console.error('Error marking training as complete:', err);
+            });
+    };
+
+    const handleDeleteClick = (id: number) => {
+        setDeleteConfirmId(id);
+        setConfirmDialogOpen(true);
+    };
+
+    const handleDialogClose = () => {
+        setConfirmDialogOpen(false);
+        setDeleteConfirmId(null);
+    };
+
+    const confirmDelete = () => {
+        if (deleteConfirmId === null) return;
+        const token = localStorage.getItem('token');
+        if (!token) {
+            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
+            return;
+        }
+
+        axios
+            .delete(`/api/training/${deleteConfirmId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(() => {
+                setConfirmDialogOpen(false);
+                setDeleteConfirmId(null);
+                fetchWorkouts();
+            })
+            .catch((err) => {
+                console.error('Error deleting workout:', err);
+            });
     };
 
     const handleNavClick = (path: string) => {
@@ -107,6 +182,59 @@ const YourWorkoutsPage: React.FC = () => {
                 </Toolbar>
             </AppBar>
 
+            {/* Dialog potwierdzenia usunięcia */}
+            <Dialog
+                open={confirmDialogOpen}
+                onClose={handleDialogClose}
+                PaperProps={{
+                    sx: {
+                        backgroundColor: 'rgba(60, 60, 60, 0.85)',
+                        backdropFilter: 'blur(6px)',
+                        color: '#fff',
+                        borderRadius: 2,
+                        minWidth: 300
+                    }
+                }}
+            >
+                <DialogTitle sx={{ fontWeight: 600, fontSize: 24 }}>Potwierdzenie</DialogTitle>
+                <DialogContent>
+                    <Typography sx={{ fontSize: 18, color: '#fff' }}>
+                        Czy na pewno chcesz usunąć ten trening?
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2 }}>
+                    <Button
+                        onClick={handleDialogClose}
+                        sx={{
+                            color: '#fff',
+                            backgroundColor: 'rgba(255,255,255,0.1)',
+                            mr: 1,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            '&:hover': {
+                                backgroundColor: 'rgba(255,255,255,0.2)'
+                            }
+                        }}
+                    >
+                        Anuluj
+                    </Button>
+                    <Button
+                        onClick={confirmDelete}
+                        sx={{
+                            backgroundColor: '#C00',
+                            color: '#fff',
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            '&:hover': {
+                                backgroundColor: '#F00'
+                            }
+                        }}
+                    >
+                        Usuń
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Główna zawartość */}
             <Container
                 sx={{
@@ -145,83 +273,116 @@ const YourWorkoutsPage: React.FC = () => {
                         >
                             YOUR WORKOUTS
                         </Typography>
-                        {/* Przycisk Refresh */}
+                        {/* Przycisk odświeżenia (opcjonalnie) */}
                         <IconButton onClick={fetchWorkouts} sx={{ color: '#fff' }}>
                             <RefreshIcon fontSize="large" />
                         </IconButton>
                     </Box>
 
-                    {workouts.map((workout) => (
-                        <Card
-                            key={workout.id}
-                            sx={{
-                                mb: 2,
-                                backgroundColor: 'rgba(255,255,255,0.75)',
-                                borderRadius: 2,
-                                boxShadow: 3,
-                                transition: 'all 0.3s ease'
-                            }}
-                        >
-                            <CardContent sx={{ textAlign: 'left' }}>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center'
-                                    }}
-                                >
-                                    {/* Lewa część – nazwa i data */}
-                                    <Box>
-                                        <Typography variant="h6" sx={{ color: '#000', fontWeight: 700 }}>
-                                            {workout.name}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: '#333' }}>
-                                            {workout.trainingDate}
-                                        </Typography>
+                    {workouts.map((workout) => {
+                        const isExpanded = expandedIds.includes(workout.id);
+                        return (
+                            <Card
+                                key={workout.id}
+                                sx={{
+                                    mb: 2,
+                                    backgroundColor: 'rgba(230,230,230,0.75)',
+                                    borderRadius: 2,
+                                    boxShadow: 3,
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
+                                <CardContent sx={{ textAlign: 'left' }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        {/* Lewa część – nazwa i data */}
+                                        <Box>
+                                            <Typography variant="h6" sx={{ color: '#000', fontWeight: 700 }}>
+                                                {workout.name}
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: '#333' }}>
+                                                {workout.trainingDate}
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Prawa część – przyciski */}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            {/* Expand (v) */}
+                                            <IconButton
+                                                onClick={() => toggleExpanded(workout.id)}
+                                                sx={{
+                                                    color: '#333',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
+                                                }}
+                                            >
+                                                <ExpandMoreIcon
+                                                    sx={{
+                                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                        transition: 'transform 0.3s'
+                                                    }}
+                                                />
+                                            </IconButton>
+                                            {/* Edycja */}
+                                            <IconButton
+                                                onClick={() => handleEdit(workout.id)}
+                                                sx={{
+                                                    color: '#333',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
+                                                }}
+                                            >
+                                                <EditIcon />
+                                            </IconButton>
+                                            {/* Zatwierdź (ukończony) */}
+                                            <IconButton
+                                                onClick={() => handleComplete(workout.id)}
+                                                sx={{
+                                                    color: '#2a2',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
+                                                }}
+                                            >
+                                                <CheckCircleIcon />
+                                            </IconButton>
+                                            {/* Usuń (X) */}
+                                            <IconButton
+                                                onClick={() => handleDeleteClick(workout.id)}
+                                                sx={{
+                                                    color: '#f55',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
+                                                }}
+                                            >
+                                                <DeleteIcon />
+                                            </IconButton>
+                                        </Box>
                                     </Box>
 
-                                    {/* Prawa część – przycisk Szczegóły */}
-                                    <Box>
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            onClick={() => toggleExpanded(workout.id)}
-                                            sx={{
-                                                transition: 'background-color 0.2s ease',
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                                '&:hover': {
-                                                    backgroundColor: '#444'
-                                                }
-                                            }}
-                                        >
-                                            Szczegóły
-                                        </Button>
-                                    </Box>
-                                </Box>
-
-                                {/* Rozwijane szczegóły (z animacją Collapsa) */}
-                                <Collapse
-                                    in={expandedIds.includes(workout.id)}
-                                    timeout="auto"
-                                    unmountOnExit
-                                    sx={{ mt: 1 }}
-                                >
-                                    <Box sx={{ pl: 1 }}>
-                                        <Typography variant="body1" sx={{ color: '#000' }}>
-                                            <strong>Name: </strong> {workout.name}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{ color: '#000' }}>
-                                            <strong>Date: </strong> {workout.trainingDate}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{ color: '#000' }}>
-                                            <strong>Description: </strong> {workout.description}
-                                        </Typography>
-                                    </Box>
-                                </Collapse>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                    {/* Rozwijane szczegóły (Collapse) */}
+                                    <Collapse
+                                        in={isExpanded}
+                                        timeout="auto"
+                                        unmountOnExit
+                                        sx={{ mt: 1 }}
+                                    >
+                                        <Box sx={{ pl: 1 }}>
+                                            <Typography variant="body1" sx={{ color: '#000' }}>
+                                                <strong>Name: </strong> {workout.name}
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: '#000' }}>
+                                                <strong>Date: </strong> {workout.trainingDate}
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ color: '#000' }}>
+                                                <strong>Description: </strong> {workout.description}
+                                            </Typography>
+                                        </Box>
+                                    </Collapse>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </Box>
             </Container>
         </Box>

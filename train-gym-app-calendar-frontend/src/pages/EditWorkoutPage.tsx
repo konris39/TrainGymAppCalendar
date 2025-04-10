@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     AppBar,
     Toolbar,
@@ -8,23 +8,55 @@ import {
     Container,
     TextField
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import dayjs from 'dayjs';
 
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/pl';
 
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
-const AddEventPage: React.FC = () => {
+const EditWorkoutPage: React.FC = () => {
     const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
 
     const [eventName, setEventName] = useState('');
     const [eventDate, setEventDate] = useState<any>(null);
     const [description, setDescription] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
+
+    const fetchWorkoutDetails = () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            setErrorMessage('Brak tokenu. Zaloguj się.');
+            return;
+        }
+        axios
+            .get(`/api/training/${id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            })
+            .then((res) => {
+                const data = res.data;
+                setEventName(data.name);
+                setEventDate(dayjs(data.trainingDate));
+                setDescription(data.description);
+            })
+            .catch((err) => {
+                console.error('Error fetching workout details:', err);
+                setErrorMessage('Nie udało się pobrać danych treningu.');
+            });
+    };
+
+    useEffect(() => {
+        if (id) {
+            fetchWorkoutDetails();
+        }
+    }, [id]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -35,8 +67,9 @@ const AddEventPage: React.FC = () => {
                 setErrorMessage('Brak tokenu. Zaloguj się.');
                 return;
             }
-            const response = await axios.post(
-                '/api/training/add',
+
+            const response = await axios.patch(
+                `/api/training/update/${id}`,
                 {
                     name: eventName,
                     trainingDate: finalDate,
@@ -48,14 +81,13 @@ const AddEventPage: React.FC = () => {
                     }
                 }
             );
-            console.log('Add Event response:', response.data);
+            console.log('Update response:', response.data);
             navigate('/your-workouts');
         } catch (error) {
-            console.error('Add Event error:', error);
-            setErrorMessage('Nie udało się dodać wydarzenia.');
+            console.error('Update error:', error);
+            setErrorMessage('Nie udało się zaktualizować treningu.');
         }
     };
-
 
     const handleNavClick = (path: string) => {
         navigate(path);
@@ -193,7 +225,7 @@ const AddEventPage: React.FC = () => {
                             fontSize: 84
                         }}
                     >
-                        ADD EVENT
+                        EDIT EVENT
                     </Typography>
 
                     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
@@ -209,14 +241,14 @@ const AddEventPage: React.FC = () => {
                                 InputProps={{
                                     notched: false,
                                     sx: {
-                                        ...textFieldStyle,
+                                        ...textFieldStyle
                                     }
                                 }}
                                 InputLabelProps={{ sx: inputLabelStyle }}
                                 sx={{ ...inputOutlineStyle, ...floatLabelStyle, mb: 3 }}
                             />
 
-                            {/* POLE DATA (DatePicker) */}
+                            {/* DATA (DatePicker) */}
                             <DatePicker
                                 label="Data"
                                 value={eventDate}
@@ -283,7 +315,7 @@ const AddEventPage: React.FC = () => {
                                     py: 1.2
                                 }}
                             >
-                                SUBMIT
+                                CONFIRM
                             </Button>
                         </Box>
                     </LocalizationProvider>
@@ -293,4 +325,4 @@ const AddEventPage: React.FC = () => {
     );
 };
 
-export default AddEventPage;
+export default EditWorkoutPage;
