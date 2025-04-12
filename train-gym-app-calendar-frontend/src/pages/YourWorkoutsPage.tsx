@@ -18,7 +18,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-import RefreshIcon from '@mui/icons-material/Refresh';
 import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -273,10 +272,6 @@ const YourWorkoutsPage: React.FC = () => {
                         >
                             YOUR WORKOUTS
                         </Typography>
-                        {/* Przycisk odświeżenia (opcjonalnie) */}
-                        <IconButton onClick={fetchWorkouts} sx={{ color: '#fff' }}>
-                            <RefreshIcon fontSize="large" />
-                        </IconButton>
                     </Box>
 
                     {workouts.map((workout) => {

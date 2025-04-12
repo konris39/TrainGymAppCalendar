@@ -17,18 +17,18 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/pl';
 
-
-const EditWorkoutPage: React.FC = () => {
+const EditWorkoutCalPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams<{ id: string }>();
-    const from = (location.state as any)?.from || '/your-workouts';
+    const from = (location.state as any)?.from || `/training-detail/${id}`;
 
     const [eventName, setEventName] = useState('');
     const [eventDate, setEventDate] = useState<any>(null);
     const [description, setDescription] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
 
+    // Funkcja pobierająca szczegóły treningu
     const fetchWorkoutDetails = () => {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -293,4 +293,4 @@ const EditWorkoutPage: React.FC = () => {
     );
 };
 
-export default EditWorkoutPage;
+export default EditWorkoutCalPage;
