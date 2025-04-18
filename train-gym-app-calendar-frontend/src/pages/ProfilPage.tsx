@@ -18,7 +18,6 @@ import axios from 'axios';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
-import RefreshIcon from '@mui/icons-material/Refresh';
 
 interface UserData {
     id: number;
@@ -383,11 +382,6 @@ const ProfilePage: React.FC = () => {
                             </Typography>
                         </Box>
 
-                        <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                            <IconButton onClick={fetchProfile}>
-                                <RefreshIcon />
-                            </IconButton>
-                        </Box>
                     </CardContent>
                 </Card>
             </Container>

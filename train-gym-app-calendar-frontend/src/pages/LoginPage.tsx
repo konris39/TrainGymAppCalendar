@@ -64,7 +64,7 @@ const LoginPage: React.FC = () => {
                 justifyContent: 'center'
             }}
         >
-            <Grid container justifyContent="center">
+            <Grid container>
                 <Grid size={{ xs: 11, sm: 8, md: 5, lg: 4 }}>
                     <Paper
                         elevation={6}
@@ -77,7 +77,8 @@ const LoginPage: React.FC = () => {
                             borderRadius: 4,
                             backgroundColor: 'rgba(255, 255, 255, 0.2)',
                             backdropFilter: 'blur(15px)',
-                            WebkitBackdropFilter: 'blur(15px)'
+                            WebkitBackdropFilter: 'blur(15px)',
+                            mx: 'auto',
                         }}
                     >
                         <Typography variant="h4" component="h1" mb={3}>
