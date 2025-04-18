@@ -1,388 +1,197 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    AppBar,
-    Toolbar,
-    Button,
-    Typography,
-    Box,
     Container,
+    Box,
     Card,
     CardContent,
     Collapse,
     IconButton,
+    Typography,
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions
+    DialogActions,
+    Button,
+    useTheme
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
 import EditIcon from '@mui/icons-material/Edit';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import dayjs from 'dayjs';
 
 interface Workout {
     id: number;
     name: string;
     description: string;
     trainingDate: string;
-    completed?: boolean;
+    completed: boolean;
 }
 
 const YourWorkoutsPage: React.FC = () => {
     const navigate = useNavigate();
+    const theme = useTheme();
     const [workouts, setWorkouts] = useState<Workout[]>([]);
     const [expandedIds, setExpandedIds] = useState<number[]>([]);
-
-    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-
-    const fetchWorkouts = () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
-            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
-            return;
-        }
-        axios
-            .get('/api/training/my', {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            })
-            .then((res) => {
-                setWorkouts(res.data);
-            })
-            .catch((err) => {
-                console.error('Error fetching workouts:', err);
-            });
-    };
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
     useEffect(() => {
-        fetchWorkouts();
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        axios
+            .get<Workout[]>('/api/training/my', { headers: { Authorization: `Bearer ${token}` } })
+            .then(res => setWorkouts(res.data))
+            .catch(console.error);
     }, []);
 
-    const toggleExpanded = (id: number) => {
-        setExpandedIds((prev) =>
-            prev.includes(id)
-                ? prev.filter((expandedId) => expandedId !== id)
-                : [...prev, id]
+    const sortedWorkouts = [...workouts].sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+    });
+
+    const toggleExpand = (id: number) => {
+        setExpandedIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
         );
     };
 
-    const handleEdit = (id: number) => {
-        navigate(`/edit-workout/${id}`);
-    };
-
-    const handleComplete = (id: number) => {
+    const markComplete = (id: number) => {
         const token = localStorage.getItem('token');
-        if (!token) {
-            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
-            return;
-        }
+        if (!token) return;
         axios
-            .patch(`/api/training/complete/${id}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            .then(() => {
-                fetchWorkouts();
-            })
-            .catch((err) => {
-                console.error('Error marking training as complete:', err);
-            });
+            .patch(`/api/training/complete/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } })
+            .then(() => window.location.reload())
+            .catch(console.error);
     };
 
-    const handleDeleteClick = (id: number) => {
-        setDeleteConfirmId(id);
-        setConfirmDialogOpen(true);
+    const requestDelete = (id: number) => {
+        setDeleteId(id);
+        setConfirmOpen(true);
     };
-
-    const handleDialogClose = () => {
-        setConfirmDialogOpen(false);
-        setDeleteConfirmId(null);
+    const cancelDelete = () => {
+        setConfirmOpen(false);
+        setDeleteId(null);
     };
-
     const confirmDelete = () => {
-        if (deleteConfirmId === null) return;
+        if (!deleteId) return;
         const token = localStorage.getItem('token');
-        if (!token) {
-            console.error('Brak tokenu. Użytkownik nie jest zalogowany.');
-            return;
-        }
-
+        if (!token) return;
         axios
-            .delete(`/api/training/${deleteConfirmId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            .then(() => {
-                setConfirmDialogOpen(false);
-                setDeleteConfirmId(null);
-                fetchWorkouts();
-            })
-            .catch((err) => {
-                console.error('Error deleting workout:', err);
-            });
+            .delete(`/api/training/${deleteId}`, { headers: { Authorization: `Bearer ${token}` } })
+            .then(() => window.location.reload())
+            .catch(console.error);
     };
 
-    const handleNavClick = (path: string) => {
-        navigate(path);
-    };
+    const editWorkout = (id: number) => navigate(`/edit-workout/${id}`);
 
     return (
-        <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-            {/* Wideo tło */}
-            <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    zIndex: -1
-                }}
-            >
-                <source src="/videos/background.mp4" type="video/mp4" />
-                Twoja przeglądarka nie obsługuje wideo.
-            </video>
-
-            {/* Navbar */}
-            <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
-                <Toolbar sx={{ justifyContent: 'space-between' }}>
-                    <Typography
-                        variant="h6"
-                        sx={{ color: '#fff', cursor: 'pointer' }}
-                        onClick={() => handleNavClick('/main')}
-                    >
-                        Train Gym App
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/add-workout')}>
-                            Add Workout
-                        </Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/calendar')}>
-                            Calendar
-                        </Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/your-workouts')}>
-                            Your Workouts
-                        </Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/1rm-calculator')}>
-                            1RM Calculator
-                        </Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/profile')}>
-                            Profile
-                        </Button>
-                    </Box>
-                </Toolbar>
-            </AppBar>
-
-            {/* Dialog potwierdzenia usunięcia */}
-            <Dialog
-                open={confirmDialogOpen}
-                onClose={handleDialogClose}
-                PaperProps={{
-                    sx: {
-                        backgroundColor: 'rgba(60, 60, 60, 0.85)',
-                        backdropFilter: 'blur(6px)',
-                        color: '#fff',
-                        borderRadius: 2,
-                        minWidth: 300
-                    }
-                }}
-            >
-                <DialogTitle sx={{ fontWeight: 600, fontSize: 24 }}>Potwierdzenie</DialogTitle>
-                <DialogContent>
-                    <Typography sx={{ fontSize: 18, color: '#fff' }}>
-                        Czy na pewno chcesz usunąć ten trening?
-                    </Typography>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button
-                        onClick={handleDialogClose}
-                        sx={{
-                            color: '#fff',
-                            backgroundColor: 'rgba(255,255,255,0.1)',
-                            mr: 1,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            '&:hover': {
-                                backgroundColor: 'rgba(255,255,255,0.2)'
-                            }
-                        }}
-                    >
-                        Anuluj
-                    </Button>
-                    <Button
-                        onClick={confirmDelete}
-                        sx={{
-                            backgroundColor: '#C00',
-                            color: '#fff',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            '&:hover': {
-                                backgroundColor: '#F00'
-                            }
-                        }}
-                    >
-                        Usuń
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Główna zawartość */}
-            <Container
+        <Container sx={{ mt: '124px', position: 'relative', zIndex: 1 }}>
+            <Box
                 sx={{
-                    mt: '84px',
-                    position: 'relative',
-                    zIndex: 1,
-                    animation: 'fadeIn 1s',
-                    '@keyframes fadeIn': {
-                        from: { opacity: 0 },
-                        to: { opacity: 1 }
-                    }
+                    backgroundColor: 'rgba(240,240,240,0.9)',
+                    borderRadius: 2,
+                    p: 4,
+                    boxShadow: 3,
+                    maxWidth: 800,
+                    mx: 'auto'
                 }}
             >
-                <Box
-                    sx={{
-                        backgroundColor: 'rgba(50, 50, 50, 0.45)',
-                        backdropFilter: 'blur(6px)',
-                        WebkitBackdropFilter: 'blur(6px)',
-                        borderRadius: 2,
-                        px: 4,
-                        py: 4,
-                        maxWidth: 700,
-                        mx: 'auto',
-                        textAlign: 'center'
-                    }}
+                <Typography
+                    variant="h4"
+                    sx={{ mb: 2, fontWeight: 700, textAlign: 'center' }}
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
-                        <Typography
+                    YOUR WORKOUTS
+                </Typography>
+
+                {sortedWorkouts.map(w => {
+                    const expanded = expandedIds.includes(w.id);
+                    return (
+                        <Card
+                            key={w.id}
                             sx={{
-                                color: '#fff',
-                                fontWeight: 600,
-                                fontFamily: 'Yu Gothic Light',
-                                fontSize: { xs: 48, md: 72 },
-                                mr: 2
+                                mb: 2,
+                                boxShadow: 2,
+                                position: 'relative',
+                                bgcolor: w.completed ? '#f0f0f0' : '#fff',
+                                opacity: w.completed ? 0.6 : 1
                             }}
                         >
-                            YOUR WORKOUTS
-                        </Typography>
-                    </Box>
+                            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                                        {w.name}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {dayjs(w.trainingDate).format('DD MMM YYYY')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                    <IconButton onClick={() => toggleExpand(w.id)}>
+                                        <ExpandMoreIcon
+                                            sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: '0.3s' }}
+                                        />
+                                    </IconButton>
+                                    <IconButton onClick={() => editWorkout(w.id)}>
+                                        <EditIcon />
+                                    </IconButton>
+                                    <IconButton onClick={() => markComplete(w.id)} sx={{ color: theme.palette.success.main }}>
+                                        <CheckCircleIcon />
+                                    </IconButton>
+                                    <IconButton onClick={() => requestDelete(w.id)} sx={{ color: theme.palette.error.main }}>
+                                        <DeleteIcon />
+                                    </IconButton>
+                                </Box>
+                            </CardContent>
+                            <Collapse in={expanded} timeout="auto" unmountOnExit>
+                                <Box sx={{ p: 2, bgcolor: '#f9f9f9' }}>
+                                    <Typography variant="body1">
+                                        {w.description || 'No description provided.'}
+                                    </Typography>
+                                </Box>
+                            </Collapse>
 
-                    {workouts.map((workout) => {
-                        const isExpanded = expandedIds.includes(workout.id);
-                        return (
-                            <Card
-                                key={workout.id}
-                                sx={{
-                                    mb: 2,
-                                    backgroundColor: 'rgba(230,230,230,0.75)',
-                                    borderRadius: 2,
-                                    boxShadow: 3,
-                                    transition: 'all 0.3s ease'
-                                }}
-                            >
-                                <CardContent sx={{ textAlign: 'left' }}>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center'
-                                        }}
-                                    >
-                                        {/* Lewa część – nazwa i data */}
-                                        <Box>
-                                            <Typography variant="h6" sx={{ color: '#000', fontWeight: 700 }}>
-                                                {workout.name}
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: '#333' }}>
-                                                {workout.trainingDate}
-                                            </Typography>
-                                        </Box>
+                            {w.completed && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        bgcolor: 'rgba(255,255,255,0.6)'
+                                    }}
+                                >
+                                    <Typography variant="h4" color="text.secondary" sx={{ textTransform: 'uppercase' }}>
+                                        Completed
+                                    </Typography>
+                                </Box>
+                            )}
+                        </Card>
+                    );
+                })}
 
-                                        {/* Prawa część – przyciski */}
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            {/* Expand (v) */}
-                                            <IconButton
-                                                onClick={() => toggleExpanded(workout.id)}
-                                                sx={{
-                                                    color: '#333',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
-                                                }}
-                                            >
-                                                <ExpandMoreIcon
-                                                    sx={{
-                                                        transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                        transition: 'transform 0.3s'
-                                                    }}
-                                                />
-                                            </IconButton>
-                                            {/* Edycja */}
-                                            <IconButton
-                                                onClick={() => handleEdit(workout.id)}
-                                                sx={{
-                                                    color: '#333',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
-                                                }}
-                                            >
-                                                <EditIcon />
-                                            </IconButton>
-                                            {/* Zatwierdź (ukończony) */}
-                                            <IconButton
-                                                onClick={() => handleComplete(workout.id)}
-                                                sx={{
-                                                    color: '#2a2',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
-                                                }}
-                                            >
-                                                <CheckCircleIcon />
-                                            </IconButton>
-                                            {/* Usuń (X) */}
-                                            <IconButton
-                                                onClick={() => handleDeleteClick(workout.id)}
-                                                sx={{
-                                                    color: '#f55',
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.6)'
-                                                }}
-                                            >
-                                                <DeleteIcon />
-                                            </IconButton>
-                                        </Box>
-                                    </Box>
-
-                                    {/* Rozwijane szczegóły (Collapse) */}
-                                    <Collapse
-                                        in={isExpanded}
-                                        timeout="auto"
-                                        unmountOnExit
-                                        sx={{ mt: 1 }}
-                                    >
-                                        <Box sx={{ pl: 1 }}>
-                                            <Typography variant="body1" sx={{ color: '#000' }}>
-                                                <strong>Name: </strong> {workout.name}
-                                            </Typography>
-                                            <Typography variant="body1" sx={{ color: '#000' }}>
-                                                <strong>Date: </strong> {workout.trainingDate}
-                                            </Typography>
-                                            <Typography variant="body1" sx={{ color: '#000' }}>
-                                                <strong>Description: </strong> {workout.description}
-                                            </Typography>
-                                        </Box>
-                                    </Collapse>
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </Box>
-            </Container>
-        </Box>
+                {/* Delete Confirmation */}
+                <Dialog open={confirmOpen} onClose={cancelDelete}>
+                    <DialogTitle>Confirm Delete</DialogTitle>
+                    <DialogContent>
+                        <Typography>Are you sure you want to delete this workout?</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={cancelDelete}>Cancel</Button>
+                        <Button onClick={confirmDelete} color="error">
+                            Delete
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+            </Box>
+        </Container>
     );
 };
-
 
 export default YourWorkoutsPage;
