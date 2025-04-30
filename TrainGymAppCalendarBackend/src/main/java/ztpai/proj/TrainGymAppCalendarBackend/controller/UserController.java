@@ -34,6 +34,27 @@ public class UserController {
     }
     ==============================*/
 
+    public static class MeResponse {
+        public Integer id;
+        public String name;
+        public String mail;
+        public boolean trainer;
+        public boolean admin;
+        public MeResponse(User u) {
+            this.id = u.getId();
+            this.name = u.getName();
+            this.mail = u.getMail();
+            this.trainer = u.getTrainer();
+            this.admin = u.getAdmin();
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> getMe() {
+        User current = getCurrentUser();
+        return ResponseEntity.ok(new MeResponse(current));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<User> findByUserId(@PathVariable Integer id){
         User currentUser = getCurrentUser();
