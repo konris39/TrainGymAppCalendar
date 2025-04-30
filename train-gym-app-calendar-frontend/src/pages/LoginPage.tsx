@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Box, Paper, Typography, TextField, Button, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { AuthContext } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const { reload } = useContext(AuthContext);
     const [mail, setMail] = useState<string>('');
     const [password, setPassword] = useState<string>('');
     const [errorMessage, setErrorMessage] = useState<string>('');
@@ -14,15 +16,18 @@ const LoginPage: React.FC = () => {
         try {
             const response = await axios.post('/api/auth/login', { mail, password });
             const { token } = response.data;
+
             localStorage.setItem('token', token);
             console.log('Response token:', token);
+
+            reload();
+
             navigate('/main');
         } catch (error: any) {
             console.error('Login error:', error);
             setErrorMessage('Niepoprawny email lub hasło');
         }
     };
-
 
     const textFieldStyle = {
         backgroundColor: 'rgba(235,235,235,0.65)',
@@ -65,7 +70,7 @@ const LoginPage: React.FC = () => {
             }}
         >
             <Grid container>
-                <Grid size={{ xs: 11, sm: 8, md: 5, lg: 4 }}>
+                <Grid size={{xs: 11, sm:8, md: 5, lg: 4}}>
                     <Paper
                         elevation={6}
                         sx={{
@@ -151,6 +156,5 @@ const LoginPage: React.FC = () => {
         </Box>
     );
 };
-
 
 export default LoginPage;
