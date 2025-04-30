@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { AppBar, Toolbar, Button, Typography, Box, Container } from '@mui/material';
+import { AuthContext } from './contexts/AuthContext';
 
 const Layout: React.FC = () => {
     const navigate = useNavigate();
     const [videoLoaded, setVideoLoaded] = useState(false);
+
+    const { user, loading } = useContext(AuthContext);
 
     const handleNavClick = (path: string) => {
         navigate(path);
@@ -12,19 +15,17 @@ const Layout: React.FC = () => {
 
     return (
         <Box sx={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-            {/* Placeholder until video loads (global) */}
             {!videoLoaded && (
                 <Box
                     sx={{
                         position: 'absolute',
                         inset: 0,
                         backgroundColor: '#000',
-                        zIndex: -2
+                        zIndex: -2,
                     }}
                 />
             )}
 
-            {/* Background video (global) */}
             <video
                 autoPlay
                 loop
@@ -41,14 +42,13 @@ const Layout: React.FC = () => {
                     width: '100%',
                     height: 'auto',
                     minHeight: '100vh',
-                    transition: 'opacity 0.8s ease-in-out'
+                    transition: 'opacity 0.8s ease-in-out',
                 }}
             >
                 <source src="/videos/background.mp4" type="video/mp4" />
                 Twoja przeglądarka nie obsługuje formatu video.
             </video>
 
-            {/* Shared AppBar */}
             <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
                     <Typography
@@ -59,16 +59,32 @@ const Layout: React.FC = () => {
                         Train Gym App
                     </Typography>
                     <Box sx={{ display: 'flex', gap: 3 }}>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/add-workout')}>Add Workout</Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/calendar')}>Calendar</Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/your-workouts')}>Your Workouts</Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/1rm-calculator')}>1RM Calculator</Button>
-                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/profile')}>Profile</Button>
+                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/add-workout')}>
+                            Add Workout
+                        </Button>
+                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/calendar')}>
+                            Calendar
+                        </Button>
+                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/your-workouts')}>
+                            Your Workouts
+                        </Button>
+                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/1rm-calculator')}>
+                            1RM Calculator
+                        </Button>
+                        <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/profile')}>
+                            Profile
+                        </Button>
+
+                        {}
+                        {!loading && user?.admin && (
+                            <Button sx={{ color: '#fff' }} onClick={() => handleNavClick('/admin')}>
+                                Admin
+                            </Button>
+                        )}
                     </Box>
                 </Toolbar>
             </AppBar>
 
-            {/* Dynamic page content injected here */}
             <Container sx={{ mt: '124px', position: 'relative', zIndex: 1 }}>
                 <Outlet />
             </Container>
