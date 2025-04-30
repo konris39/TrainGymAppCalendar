@@ -29,14 +29,19 @@ public class User {
     @Column(name="is_user_trainer", nullable = false, columnDefinition = "boolean default false")
     private boolean trainer;
 
+    @NotNull
+    @Column(name="is_admin", nullable = false, columnDefinition = "boolean default false")
+    private boolean admin;
+
     public User(){}
 
-    public User(Integer id, String name, String mail, boolean trainer){
+    public User(Integer id, String name, String mail, boolean trainer, boolean admin){
         this.id = id;
         this.name = name;
         this.mail = mail;
         this.password = password;
         this.trainer = trainer;
+        this.admin = admin;
     }
     public void setId(Integer id) {
         this.id = id;
@@ -76,5 +81,9 @@ public class User {
 
     public boolean getTrainer(){
         return trainer;
+    }
+
+    public boolean getAdmin() {
+        return admin;
     }
 }
