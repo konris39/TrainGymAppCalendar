@@ -3,6 +3,7 @@ package ztpai.proj.TrainGymAppCalendarBackend.controller;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -26,13 +27,18 @@ public class UserController {
     }
 
     // Use for admin view if needed
-    /*==============================
+    /*==============================*/
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("")
-    public List<User> findAll(){
-        return repository.findAll();
+    public ResponseEntity<List<User>> findAll(){
+        User currentUser = getCurrentUser();
+        if(!currentUser.getAdmin()){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        List<User> users = repository.findAll();
+        return ResponseEntity.ok(users);
     }
-    ==============================*/
+    /*==============================*/
 
     @GetMapping("/{id}")
     public ResponseEntity<User> findByUserId(@PathVariable Integer id){
@@ -62,6 +68,22 @@ public class UserController {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PatchMapping("/updateRoles/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateUserRoles(@PathVariable Integer id, @RequestBody User user){
+        Optional<User> userOptional = repository.findById(id);
+        if (userOptional.isPresent()) {
+            User existingUser = userOptional.get();
+            existingUser.setName(user.getName());
+            existingUser.setTrainer(user.getTrainer());
+            existingUser.setAdmin(user.getAdmin());
+            repository.save(existingUser);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PatchMapping("/updateName/{id}")

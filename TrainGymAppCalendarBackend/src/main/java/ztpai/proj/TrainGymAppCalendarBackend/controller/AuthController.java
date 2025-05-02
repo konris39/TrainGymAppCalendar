@@ -60,7 +60,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nieprawidłowy email lub hasło");
         }
 
-        String token = jwtUtil.generateToken(user.getMail());
+        String token = jwtUtil.generateToken(user);
         return ResponseEntity.ok(new JwtResponse(token));
     }
 }
