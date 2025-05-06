@@ -48,10 +48,10 @@ Gdy budujesz poraz pierwszy:
 docker compose up -d --build // build jedynie przy pierwszym wywołaniu, bądź gdy chcemy przebudować baze!!!
 ```
 
-W przeciwnym przypadku:
+W przeciwnym przypadku, dla normalnego odpalenia:
 
 ```
-docker compose up -d // build jedynie przy pierwszym wywołaniu, bądź gdy chcemy przebudować baze!!!
+docker compose up -d
 ```
 
 Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE
