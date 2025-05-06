@@ -42,8 +42,16 @@ Jak zsetupować aplikacje?
 cd TrainGymAppCalendarBackend
 ```
 
+Gdy budujesz poraz pierwszy:
+
 ```
 docker compose up -d --build // build jedynie przy pierwszym wywołaniu, bądź gdy chcemy przebudować baze!!!
+```
+
+W przeciwnym przypadku:
+
+```
+docker compose up -d // build jedynie przy pierwszym wywołaniu, bądź gdy chcemy przebudować baze!!!
 ```
 
 Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE
