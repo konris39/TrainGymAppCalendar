@@ -1,4 +1,4 @@
-# **Welcome to my app TrainGymAppCalendar 🫡**
+# Welcome to my app TrainGymAppCalendar 🫡
 
 Aplikacja służy do zapisywania swoich treningów oraz dodawania ich do kalendarza!
 
@@ -37,7 +37,7 @@ W zakładce profil mamy możliwość dodania informacji o nas, a także zobaczen
 
 Jak zsetupować aplikacje?
 
-# Na backendzie:
+# **Na backendzie:**
 ```bash
 cd TrainGymAppCalendarBackend
 ```
@@ -49,7 +49,7 @@ docker compose up -d --build // build jedynie przy pierwszym wywołaniu, bądź 
 Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE
 
 
-# Na frontendzie:
+# **Na frontendzie:**
 ```bash
 cd train-gym-app-calendar-frontend
 ```
