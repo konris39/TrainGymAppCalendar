@@ -35,34 +35,4 @@ W zakładce profil mamy możliwość dodania informacji o nas, a także zobaczen
 ![editEvent](https://github.com/user-attachments/assets/e79d61e2-e914-48e1-9a38-4b7d68abbc28)
 
 
-Jak zsetupować aplikacje?
 
-# **Na backendzie:**
-```bash
-cd TrainGymAppCalendarBackend
-```
-
-Gdy budujesz poraz pierwszy:
-
-```
-docker compose up -d --build // build jedynie przy pierwszym wywołaniu, bądź gdy chcemy przebudować baze!!!
-```
-
-W przeciwnym przypadku, dla normalnego odpalenia:
-
-```
-docker compose up -d
-```
-
-**Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE**
-
-
-# **Na frontendzie:**
-```bash
-cd train-gym-app-calendar-frontend
-```
-
-```
-npm install
-npm start
-```
