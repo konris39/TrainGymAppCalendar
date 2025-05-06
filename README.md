@@ -54,7 +54,7 @@ W przeciwnym przypadku, dla normalnego odpalenia:
 docker compose up -d
 ```
 
-*Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE*
+**Oraz odapalmy TrainGymAppCalendarBackendApplication w naszym IDE**
 
 
 # **Na frontendzie:**
