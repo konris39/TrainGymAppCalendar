@@ -19,7 +19,6 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import axios from 'axios';
-import dayjs from 'dayjs';
 
 type UserData = {
     id: number;
@@ -65,20 +64,19 @@ const ProfilePage: React.FC = () => {
     const fetchProfile = async () => {
         if (!token) return;
         try {
-            const res = await axios.get<DataUser[]>('/api/data/my', { headers: { Authorization: `Bearer ${token}` } });
-            if (res.data.length) {
-                const fetched = res.data[0];
-                setDataUser(fetched);
-                setInitialDataUser(fetched);
-                setEditName(fetched.user.name);
-                setEditMail(fetched.user.mail);
-                setEditWeight(fetched.weight);
-                setEditHeight(fetched.height);
-                setEditAge(fetched.age);
-                setEditBP(fetched.bp);
-                setEditSQ(fetched.sq);
-                setEditDL(fetched.dl);
-            }
+            // Pobierz POJEDYNCZY obiekt, nie tablicę!
+            const res = await axios.get<DataUser>('/api/data/my', { headers: { Authorization: `Bearer ${token}` } });
+            const fetched = res.data;
+            setDataUser(fetched);
+            setInitialDataUser(fetched);
+            setEditName(fetched.user.name);
+            setEditMail(fetched.user.mail);
+            setEditWeight(fetched.weight);
+            setEditHeight(fetched.height);
+            setEditAge(fetched.age);
+            setEditBP(fetched.bp);
+            setEditSQ(fetched.sq);
+            setEditDL(fetched.dl);
         } catch (err) {
             console.error('Error fetching profile:', err);
         }
@@ -225,8 +223,8 @@ const ProfilePage: React.FC = () => {
                     <Box>
                         <Divider sx={{ mb: 1 }} />
                         <Typography variant="h6" sx={{ mb: 1 }}>Wyniki obliczeń</Typography>
-                        <Typography>{`BMI: ${dataUser?.bmi?.toFixed(2) ?? '–'}`}</Typography>
-                        <Typography>{`SUM: ${dataUser?.sum?.toFixed(2) ?? '–'}`}</Typography>
+                        <Typography>{`BMI: ${dataUser?.bmi !== undefined && dataUser?.bmi !== null ? dataUser.bmi.toFixed(2) : '–'}`}</Typography>
+                        <Typography>{`SUM: ${dataUser?.sum !== undefined && dataUser?.sum !== null ? dataUser.sum.toFixed(2) : '–'}`}</Typography>
                     </Box>
 
                     <Dialog open={confirmOpen} onClose={cancelDelete}>
