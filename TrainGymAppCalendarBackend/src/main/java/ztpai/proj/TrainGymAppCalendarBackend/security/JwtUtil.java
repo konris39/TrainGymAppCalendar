@@ -5,6 +5,8 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import ztpai.proj.TrainGymAppCalendarBackend.models.User;
+
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,11 +20,13 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private Long jwtExpirationInMs;
 
-    public String generateToken(String username) {
+    public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("admin", user.getAdmin());
+        claims.put("trainer", user.getTrainer());
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(username)
+                .setSubject(user.getMail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationInMs))
                 .signWith(SignatureAlgorithm.HS512, secret)
@@ -47,5 +51,13 @@ public class JwtUtil {
                 .setSigningKey(secret)
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public boolean isAdmin(String token){
+        return (Boolean) getClaims(token).get("admin");
+    }
+
+    public boolean isTrainer(String token){
+        return (Boolean) getClaims(token).get("trainer");
     }
 }

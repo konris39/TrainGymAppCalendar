@@ -40,5 +40,5 @@ public class securityConfig {
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtUtil jwtUtil,
                                                            CustomUserDetailsService customUserDetailsService){
         return new JwtAuthenticationFilter(jwtUtil, customUserDetailsService);
-    }
+    } // TO DO HttpOnly : true // W sensie będziesz mieć przy tokenie w przegladarce
 }
