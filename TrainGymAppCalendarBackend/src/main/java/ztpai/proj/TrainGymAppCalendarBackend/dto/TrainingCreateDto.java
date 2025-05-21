@@ -12,6 +12,16 @@ public class TrainingCreateDto {
     @NotNull
     private LocalDate trainingDate;
 
+    private boolean askTrainer = false;
+
+    public boolean isAskTrainer() {
+        return askTrainer;
+    }
+
+    public void setAskTrainer(boolean askTrainer) {
+        this.askTrainer = askTrainer;
+    }
+
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
