@@ -14,4 +14,5 @@ public interface TrainingRepository extends JpaRepository<Training, Integer> {
     List<Training> user(User user);
 
     List<Training> findAllByUserId(Integer user_id);
+    List<Training> findAllByUserIdInAndAcceptedFalse(List<Integer> userIds);
 }
