@@ -5,7 +5,9 @@ import {
     Typography,
     Box,
     TextField,
-    Button
+    Button,
+    Checkbox,
+    FormControlLabel
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -19,6 +21,7 @@ const AddEventPage: React.FC = () => {
     const [eventName, setEventName] = useState('');
     const [eventDate, setEventDate] = useState<Dayjs | null>(null);
     const [description, setDescription] = useState('');
+    const [askTrainer, setAskTrainer] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
     const textFieldStyle = {
@@ -59,8 +62,9 @@ const AddEventPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setErrorMessage('');
         if (!eventName || !eventDate) {
-            setErrorMessage('Please fill out name and date.');
+            setErrorMessage('Wypełnij nazwę i datę.');
             return;
         }
         try {
@@ -71,7 +75,12 @@ const AddEventPage: React.FC = () => {
             }
             await axios.post(
                 '/api/training/add',
-                { name: eventName, trainingDate: eventDate.format('YYYY-MM-DD'), description },
+                {
+                    name: eventName,
+                    trainingDate: eventDate.format('YYYY-MM-DD'),
+                    description,
+                    askTrainer
+                },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             window.location.href = '/your-workouts';
@@ -94,12 +103,12 @@ const AddEventPage: React.FC = () => {
                 }}
             >
                 <Typography variant="h4" sx={{ mb: 3 }}>
-                    ADD EVENT
+                    DODAJ WYDARZENIE
                 </Typography>
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ width: '100%' }}>
                     <TextField
-                        label="Event Name"
+                        label="Nazwa wydarzenia"
                         variant="outlined"
                         fullWidth
                         margin="normal"
@@ -112,7 +121,7 @@ const AddEventPage: React.FC = () => {
 
                     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pl">
                         <DatePicker
-                            label="Date"
+                            label="Data"
                             value={eventDate}
                             onChange={newValue => setEventDate(newValue)}
                             slotProps={{
@@ -131,7 +140,7 @@ const AddEventPage: React.FC = () => {
                     </LocalizationProvider>
 
                     <TextField
-                        label="Description"
+                        label="Opis"
                         variant="outlined"
                         fullWidth
                         margin="normal"
@@ -142,6 +151,19 @@ const AddEventPage: React.FC = () => {
                         InputProps={{ sx: textFieldStyle, notched: false }}
                         InputLabelProps={{ sx: inputLabelStyle }}
                         sx={{ ...inputOutlineStyle, ...floatLabelStyle, ...textFieldFocusOverride }}
+                    />
+
+                    {/* CHECKBOX dla askTrainer */}
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={askTrainer}
+                                onChange={e => setAskTrainer(e.target.checked)}
+                                color="primary"
+                            />
+                        }
+                        label="Wyślij do akceptacji trenera"
+                        sx={{ mt: 1, mb: 1, userSelect: 'none' }}
                     />
 
                     {errorMessage && (
@@ -162,7 +184,7 @@ const AddEventPage: React.FC = () => {
                             py: 1.2
                         }}
                     >
-                        SUBMIT
+                        DODAJ
                     </Button>
                 </Box>
             </Paper>
