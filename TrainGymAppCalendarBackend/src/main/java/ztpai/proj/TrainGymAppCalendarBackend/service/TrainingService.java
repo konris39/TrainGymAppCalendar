@@ -3,8 +3,11 @@ package ztpai.proj.TrainGymAppCalendarBackend.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.*;
+import ztpai.proj.TrainGymAppCalendarBackend.kafka.TrainerRequestProducer;
+import ztpai.proj.TrainGymAppCalendarBackend.models.UserGroup;
 import ztpai.proj.TrainGymAppCalendarBackend.models.Training;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
+import ztpai.proj.TrainGymAppCalendarBackend.repository.GroupRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.TrainingRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 
@@ -17,27 +20,46 @@ public class TrainingService {
 
     private final TrainingRepository trainingRepository;
     private final UserRepository userRepository;
+    private final TrainerRequestProducer trainerRequestProducer;
+    private final GroupRepository groupRepository;
 
-    public TrainingService(TrainingRepository trainingRepository, UserRepository userRepository) {
+    public TrainingService(TrainingRepository trainingRepository, UserRepository userRepository, TrainerRequestProducer trainerRequestProducer, GroupRepository groupRepository) {
         this.trainingRepository = trainingRepository;
         this.userRepository = userRepository;
+        this.trainerRequestProducer = trainerRequestProducer;
+        this.groupRepository = groupRepository;
     }
 
     @Transactional
-    public TrainingResponseDto createTraining(Integer userId, TrainingCreateDto dto) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
+public TrainingResponseDto createTraining(Integer userId, TrainingCreateDto dto) {
+    User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
 
-        Training training = new Training();
-        training.setName(dto.getName());
-        training.setDescription(dto.getDescription());
-        training.setTrainingDate(dto.getTrainingDate());
-        training.setCompleted(false);
-        training.setUser(user);
+    Training training = new Training();
+    training.setName(dto.getName());
+    training.setDescription(dto.getDescription());
+    training.setTrainingDate(dto.getTrainingDate());
+    training.setAccepted(!dto.isAskTrainer()); // jeśli askTrainer = true => accepted = false
+    training.setCompleted(false);
+    training.setUser(user);
 
-        Training saved = trainingRepository.save(training);
-        return toTrainingResponseDto(saved);
+    Training saved = trainingRepository.save(training);
+
+    if (dto.isAskTrainer()) {
+        List<UserGroup> groups = groupRepository.findAllByUserId(user.getId());
+        if (!groups.isEmpty()) {
+            Integer trainerId = groups.get(0).getTrainer().getId();
+            String event = String.format(
+                "{\"trainingId\":%d,\"userId\":%d,\"trainerId\":%d}",
+                saved.getId(), user.getId(), trainerId
+            );
+            trainerRequestProducer.sendRequest(event);
+        }
     }
+
+    return toTrainingResponseDto(saved);
+}
+
 
     public List<TrainingResponseDto> getAllUserTrainings(Integer userId) {
         List<Training> trainings = trainingRepository.findAllByUserId(userId);
@@ -101,6 +123,7 @@ public class TrainingService {
         dto.setDescription(t.getDescription());
         dto.setTrainingDate(t.getTrainingDate());
         dto.setCompleted(t.isCompleted());
+        dto.setAccepted(t.isAccepted());
         return dto;
     }
 }

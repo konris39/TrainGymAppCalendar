@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.*;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
+import ztpai.proj.TrainGymAppCalendarBackend.models.UserGroup;
+import ztpai.proj.TrainGymAppCalendarBackend.repository.GroupRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 
 import java.util.List;
@@ -15,10 +17,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final GroupRepository groupRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, GroupRepository groupRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.groupRepository = groupRepository;
     }
 
     @Transactional
@@ -83,6 +87,16 @@ public class UserService {
         User updatedUser = userRepository.save(user);
 
         return toUserResponseDto(updatedUser);
+    }
+
+    @Transactional
+    public void joinGroup(String trainerEmail, User currentUser) {
+        User trainer = userRepository.findByMail(trainerEmail)
+            .orElseThrow(() -> new RuntimeException("Nie znaleziono trenera o podanym mailu: " + trainerEmail));
+        UserGroup ug = new UserGroup();
+        ug.setTrainer(trainer);
+        ug.setUser(currentUser);
+        groupRepository.save(ug);
     }
 
     public UserResponseDto toUserResponseDto(User user) {

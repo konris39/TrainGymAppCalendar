@@ -28,6 +28,7 @@ interface Workout {
     description: string;
     trainingDate: string;
     completed: boolean;
+    accepted: boolean; // <-- dodane pole
 }
 
 const YourWorkoutsPage: React.FC = () => {
@@ -47,9 +48,11 @@ const YourWorkoutsPage: React.FC = () => {
             .catch(console.error);
     }, []);
 
+    // completed pierwsze sortowanie, potem oczekujące na akceptację
     const sortedWorkouts = [...workouts].sort((a, b) => {
-        if (a.completed === b.completed) return 0;
-        return a.completed ? 1 : -1;
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        if (a.accepted !== b.accepted) return a.accepted ? -1 : 1;
+        return 0;
     });
 
     const toggleExpand = (id: number) => {
@@ -108,6 +111,7 @@ const YourWorkoutsPage: React.FC = () => {
 
                 {sortedWorkouts.map(w => {
                     const expanded = expandedIds.includes(w.id);
+                    const awaitingAcceptance = !w.completed && !w.accepted;
                     return (
                         <Card
                             key={w.id}
@@ -115,8 +119,17 @@ const YourWorkoutsPage: React.FC = () => {
                                 mb: 2,
                                 boxShadow: 2,
                                 position: 'relative',
-                                bgcolor: w.completed ? '#f0f0f0' : '#fff',
-                                opacity: w.completed ? 0.6 : 1
+                                bgcolor: w.completed
+                                    ? '#f0f0f0'
+                                    : awaitingAcceptance
+                                    ? '#f2f2f2'
+                                    : '#fff',
+                                opacity: w.completed
+                                    ? 0.6
+                                    : awaitingAcceptance
+                                    ? 0.4
+                                    : 1,
+                                pointerEvents: w.completed || awaitingAcceptance ? 'none' : 'auto' // blokuje przyciski jeśli completed lub oczekuje
                             }}
                         >
                             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -129,18 +142,18 @@ const YourWorkoutsPage: React.FC = () => {
                                     </Typography>
                                 </Box>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <IconButton onClick={() => toggleExpand(w.id)}>
+                                    <IconButton onClick={() => toggleExpand(w.id)} disabled={w.completed || awaitingAcceptance}>
                                         <ExpandMoreIcon
                                             sx={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0)', transition: '0.3s' }}
                                         />
                                     </IconButton>
-                                    <IconButton onClick={() => editWorkout(w.id)}>
+                                    <IconButton onClick={() => editWorkout(w.id)} disabled={w.completed || awaitingAcceptance}>
                                         <EditIcon />
                                     </IconButton>
-                                    <IconButton onClick={() => markComplete(w.id)} sx={{ color: theme.palette.success.main }}>
+                                    <IconButton onClick={() => markComplete(w.id)} sx={{ color: theme.palette.success.main }} disabled={w.completed || awaitingAcceptance}>
                                         <CheckCircleIcon />
                                     </IconButton>
-                                    <IconButton onClick={() => requestDelete(w.id)} sx={{ color: theme.palette.error.main }}>
+                                    <IconButton onClick={() => requestDelete(w.id)} sx={{ color: theme.palette.error.main }} disabled={w.completed || awaitingAcceptance}>
                                         <DeleteIcon />
                                     </IconButton>
                                 </Box>
@@ -153,6 +166,41 @@ const YourWorkoutsPage: React.FC = () => {
                                 </Box>
                             </Collapse>
 
+                            {awaitingAcceptance && (
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        bgcolor: 'rgba(255,255,255,0.70)',
+                                        zIndex: 2,
+                                        pointerEvents: 'auto'
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h5"
+                                        sx={{
+                                            color: '#888',
+                                            fontWeight: 700,
+                                            textTransform: 'uppercase',
+                                            textAlign: 'center',
+                                            letterSpacing: 1,
+                                            userSelect: 'none'
+                                        }}
+                                    >
+                                        Oczekiwanie na potwierdzenie<br />
+                                        <span style={{ fontSize: 18, fontWeight: 400 }}>
+                                            Skontaktuj się z trenerem
+                                        </span>
+                                    </Typography>
+                                </Box>
+                            )}
+
                             {w.completed && (
                                 <Box
                                     sx={{
@@ -164,7 +212,9 @@ const YourWorkoutsPage: React.FC = () => {
                                         display: 'flex',
                                         justifyContent: 'center',
                                         alignItems: 'center',
-                                        bgcolor: 'rgba(255,255,255,0.6)'
+                                        bgcolor: 'rgba(255,255,255,0.6)',
+                                        zIndex: 2,
+                                        pointerEvents: 'auto'
                                     }}
                                 >
                                     <Typography variant="h4" color="text.secondary" sx={{ textTransform: 'uppercase' }}>

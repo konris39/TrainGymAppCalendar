@@ -14,6 +14,8 @@ import OneRMCalculatorPage from './pages/OneRMCalculatorPage';
 import ProfilePage from './pages/ProfilPage';
 import AdminGuard from "./AdminGuard";
 import AdminPage from "./pages/AdminPage";
+import TrainerGuard from "./TrainerGuard";
+import TrainerPanelPage from "./pages/TrainerPanelPage";
 
 function App(): JSX.Element {
     return (
@@ -34,6 +36,7 @@ function App(): JSX.Element {
                     <Route path="1rm-calculator" element={<OneRMCalculatorPage />} />
                     <Route path="profile" element={<ProfilePage />} />
                     <Route path="admin" element={<AdminGuard><AdminPage /></AdminGuard>} />
+                    <Route path="trainer-panel" element={<TrainerGuard><TrainerPanelPage /></TrainerGuard>} />
                     <Route path="*" element={<Navigate to="/main" />} />
                 </Route>
 

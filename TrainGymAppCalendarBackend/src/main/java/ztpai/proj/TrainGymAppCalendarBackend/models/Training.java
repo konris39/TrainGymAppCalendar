@@ -15,6 +15,17 @@ public class Training {
     private LocalDate trainingDate;
     private boolean isCompleted;
 
+    @Column(columnDefinition = "boolean default true")
+    private boolean accepted = true;
+
+    public boolean isAccepted() {
+        return accepted;
+    }
+
+    public void setAccepted(boolean accepted) {
+        this.accepted = accepted;
+    }
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;

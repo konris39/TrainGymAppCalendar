@@ -11,7 +11,9 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Button
+    Button,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -19,11 +21,13 @@ import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import axios from 'axios';
+import { useAuth } from '../useAuth'; // Dodaj tutaj swój hook
 
 type UserData = {
     id: number;
     name: string;
     mail: string;
+    trainer?: boolean; // Dla pewności
 };
 
 type DataUser = {
@@ -42,6 +46,7 @@ type DataUser = {
 const ProfilePage: React.FC = () => {
     const navigate = useNavigate();
     const theme = useTheme();
+    const { user, loading } = useAuth();
 
     const [dataUser, setDataUser] = useState<DataUser | null>(null);
     const [initialDataUser, setInitialDataUser] = useState<DataUser | null>(null);
@@ -58,6 +63,13 @@ const ProfilePage: React.FC = () => {
 
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    // Dialog do join group
+    const [joinOpen, setJoinOpen] = useState(false);
+    const [trainerEmail, setTrainerEmail] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
+    const [joinError, setJoinError] = useState('');
+    const [joinSuccess, setJoinSuccess] = useState(false);
 
     const token = localStorage.getItem('token');
 
@@ -151,6 +163,34 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    // Obsługa dołączania do grupy
+    const handleJoinGroup = async () => {
+        setJoinLoading(true);
+        setJoinError('');
+        setJoinSuccess(false);
+        if (!trainerEmail || !token) {
+            setJoinError('Podaj email trenera');
+            setJoinLoading(false);
+            return;
+        }
+        try {
+            await axios.post(
+                '/api/user/joinGroup',
+                { trainerEmail },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setJoinSuccess(true);
+            setTrainerEmail('');
+            setJoinOpen(false);
+        } catch (err) {
+            setJoinError('Nie udało się dołączyć do grupy. Sprawdź mail trenera.');
+        } finally {
+            setJoinLoading(false);
+        }
+    };
+
+    if (loading) return null;
+
     return (
         <Box sx={{ mt: -12, display: 'flex', justifyContent: 'center', mb: 4 }}>
             <Card sx={{ width: '100%', maxWidth: 800, bgcolor: 'rgba(230,230,230,0.85)', p: 4, boxShadow: 3, borderRadius: 2 }}>
@@ -226,6 +266,62 @@ const ProfilePage: React.FC = () => {
                         <Typography>{`BMI: ${dataUser?.bmi !== undefined && dataUser?.bmi !== null ? dataUser.bmi.toFixed(2) : '–'}`}</Typography>
                         <Typography>{`SUM: ${dataUser?.sum !== undefined && dataUser?.sum !== null ? dataUser.sum.toFixed(2) : '–'}`}</Typography>
                     </Box>
+
+                    {/* Przyciski dla NIE-trenera */}
+                    {user && !user.trainer && (
+                        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={() => setJoinOpen(true)}
+                            >
+                                Dołącz do grupy trenera
+                            </Button>
+                        </Box>
+                    )}
+
+                    {/* Dialog dołączania do grupy */}
+                    <Dialog open={joinOpen} onClose={() => setJoinOpen(false)}>
+                        <DialogTitle>Dołącz do grupy trenera</DialogTitle>
+                        <DialogContent>
+                            <TextField
+                                autoFocus
+                                margin="dense"
+                                label="Email trenera"
+                                type="email"
+                                fullWidth
+                                value={trainerEmail}
+                                onChange={e => setTrainerEmail(e.target.value)}
+                                disabled={joinLoading}
+                                required
+                            />
+                            {joinError && (
+                                <Typography color="error" sx={{ mt: 1 }}>{joinError}</Typography>
+                            )}
+                        </DialogContent>
+                        <DialogActions>
+                            <Button onClick={() => setJoinOpen(false)} disabled={joinLoading}>Anuluj</Button>
+                            <Button
+                                onClick={handleJoinGroup}
+                                disabled={joinLoading}
+                                variant="contained"
+                            >
+                                {joinLoading ? 'Dołączanie...' : 'Dołącz'}
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+
+                    {/* Snackbar sukcesu */}
+                    <Snackbar
+                        open={joinSuccess}
+                        autoHideDuration={4000}
+                        onClose={() => setJoinSuccess(false)}
+                        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                    >
+                        <Alert severity="success" variant="filled" onClose={() => setJoinSuccess(false)}>
+                            Dołączono do grupy trenera!
+                        </Alert>
+                    </Snackbar>
 
                     <Dialog open={confirmOpen} onClose={cancelDelete}>
                         <DialogTitle>Potwierdź usunięcie</DialogTitle>

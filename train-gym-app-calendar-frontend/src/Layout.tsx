@@ -6,7 +6,13 @@ import { useAuth } from './useAuth';
 const Layout: React.FC = () => {
     const [videoLoaded, setVideoLoaded] = useState(false);
     const navigate = useNavigate();
-    const { user, loading } = useAuth();
+    const { user, loading } = useAuth(); // <--- bez logout
+
+    // Prosta funkcja logout
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/login');
+    };
 
     if (loading) {
         return (
@@ -37,14 +43,21 @@ const Layout: React.FC = () => {
 
             <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
-                    <Typography
-                        variant="h6"
-                        sx={{ color: '#fff', cursor: 'pointer' }}
-                        onClick={() => navigate('/main')}
-                    >
-                        Train Gym App
-                    </Typography>
+                    {/* LEWA STRONA */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography
+                            variant="h6"
+                            sx={{ color: '#fff', cursor: 'pointer' }}
+                            onClick={() => navigate('/main')}
+                        >
+                            Train Gym App
+                        </Typography>
+                    </Box>
+                    {/* PRAWA STRONA */}
                     <Box sx={{ display: 'flex', gap: 3 }}>
+                        {user?.trainer && (
+                            <Button sx={{ color: '#fff' }} onClick={() => navigate('/trainer-panel')}>Trainer Panel</Button>
+                        )}
                         <Button sx={{ color: '#fff' }} onClick={() => navigate('/add-workout')}>Add Workout</Button>
                         <Button sx={{ color: '#fff' }} onClick={() => navigate('/calendar')}>Calendar</Button>
                         <Button sx={{ color: '#fff' }} onClick={() => navigate('/your-workouts')}>Your Workouts</Button>
@@ -53,6 +66,7 @@ const Layout: React.FC = () => {
                         {user?.admin && (
                             <Button sx={{ color: '#fff' }} onClick={() => navigate('/admin')}>Admin</Button>
                         )}
+                        <Button sx={{ color: '#fff' }} onClick={handleLogout}>LOG OUT</Button>
                     </Box>
                 </Toolbar>
             </AppBar>
