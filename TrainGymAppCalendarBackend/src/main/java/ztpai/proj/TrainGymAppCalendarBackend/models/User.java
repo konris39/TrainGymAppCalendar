@@ -5,6 +5,9 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 @Table(name="users")
 public class User {
@@ -32,6 +35,10 @@ public class User {
     @NotNull
     @Column(name="is_admin", nullable = false, columnDefinition = "boolean default false")
     private boolean admin;
+
+    @ManyToMany
+    @JoinTable(name = "user_recommended_trainings", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "recommended_training_id"))
+    private Set<RecommendedTrainings> recommendedTrainings = new HashSet<>();
 
     public User(){}
 
@@ -89,5 +96,13 @@ public class User {
 
     public void setAdmin(boolean admin) {
         this.admin = admin;
+    }
+
+    public Set<RecommendedTrainings> getRecommendedTrainings() {
+        return recommendedTrainings;
+    }
+
+    public void setRecommendedTrainings(Set<RecommendedTrainings> recommendedTrainings) {
+        this.recommendedTrainings = recommendedTrainings;
     }
 }
