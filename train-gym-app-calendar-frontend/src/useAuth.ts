@@ -1,32 +1,66 @@
 import { useState, useEffect } from 'react';
-import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
 
-interface DecodedToken {
-    sub: string;
-    admin: boolean;
-    trainer: boolean;
-    exp: number;
-}
+type User = {
+  id: number;
+  name: string;
+  mail: string;
+  admin: boolean;
+  trainer: boolean;
+};
 
-export const useAuth = (): { user: DecodedToken | null; loading: boolean } => {
-    const [user, setUser] = useState<DecodedToken | null>(null);
-    const [loading, setLoading] = useState(true);
+export const useAuth = (): {
+  user: User | null;
+  loading: boolean;
+  sessionExpired: boolean;
+  setSessionExpired: (val: boolean) => void;
+} => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const decoded: DecodedToken = jwtDecode(token);
-                setUser(decoded);
-            } catch (e) {
-                console.error('Token decode error:', e);
-                setUser(null);
-            }
-        } else {
-            setUser(null);
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUser = async () => {
+      setLoading(true);
+      try {
+        // 1. Próbujemy pobrać dane użytkownika (tu przykładowo /api/user/ME)
+        const res = await axios.get('/api/user/me', { withCredentials: true });
+        if (isMounted) {
+          setUser(res.data);
+          setSessionExpired(false);
         }
-        setLoading(false);
-    }, []);
+      } catch (err: any) {
+        // 2. Jeśli 401, spróbuj refresh:
+        if (err?.response?.status === 401) {
+          try {
+            await axios.post('/api/auth/refresh', {}, { withCredentials: true });
+            // Retry
+            const res2 = await axios.get('/api/user/me', { withCredentials: true });
+            if (isMounted) {
+              setUser(res2.data);
+              setSessionExpired(false);
+            }
+          } catch (refreshErr) {
+            // Refresh nie powiódł się
+            if (isMounted) {
+              setUser(null);
+              setSessionExpired(true);
+            }
+          }
+        } else {
+          setUser(null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
 
-    return { user, loading };
+    fetchUser();
+
+    return () => { isMounted = false; };
+  }, []);
+
+  return { user, loading, sessionExpired, setSessionExpired };
 };
