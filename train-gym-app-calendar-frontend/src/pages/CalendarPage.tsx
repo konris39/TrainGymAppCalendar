@@ -3,7 +3,7 @@ import { Container, Box, Paper, Typography, IconButton, useTheme } from '@mui/ma
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import dayjs from 'dayjs';
 
 const CalendarPage: React.FC = () => {
@@ -13,9 +13,7 @@ const CalendarPage: React.FC = () => {
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        axios.get('/api/training/my', { headers: { Authorization: `Bearer ${token}` } })
+        api.get<any[]>('/api/training/my')
             .then(res => setWorkouts(res.data))
             .catch(err => console.error('Error fetching workouts:', err));
     }, []);

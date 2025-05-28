@@ -14,7 +14,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import 'dayjs/locale/pl';
 import dayjs, { Dayjs } from 'dayjs';
-import axios from 'axios';
+import api from '../api/axios';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const AddEventPage: React.FC = () => {
@@ -68,21 +68,12 @@ const AddEventPage: React.FC = () => {
             return;
         }
         try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                setErrorMessage('Brak tokenu. Zaloguj się.');
-                return;
-            }
-            await axios.post(
-                '/api/training/add',
-                {
-                    name: eventName,
-                    trainingDate: eventDate.format('YYYY-MM-DD'),
-                    description,
-                    askTrainer
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.post('/api/training/add', {
+                name: eventName,
+                trainingDate: eventDate.format('YYYY-MM-DD'),
+                description,
+                askTrainer
+                });
             window.location.href = '/your-workouts';
         } catch {
             setErrorMessage('Nie udało się dodać wydarzenia.');

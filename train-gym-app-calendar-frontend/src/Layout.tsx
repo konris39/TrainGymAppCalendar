@@ -1,17 +1,60 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Button, Typography, Box, Container, CircularProgress } from '@mui/material';
-import { useAuth } from './useAuth';
+import {
+    AppBar, Toolbar, Button, Typography, Box, Container, CircularProgress,
+    Snackbar, Alert
+} from '@mui/material';
+import axios from 'axios';
+
+const POLL_INTERVAL = 60_000; // 1 minuta
+
+type User = {
+    id: number;
+    name: string;
+    mail: string;
+    admin: boolean;
+    trainer: boolean;
+};
 
 const Layout: React.FC = () => {
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [sessionExpired, setSessionExpired] = useState(false);
     const [videoLoaded, setVideoLoaded] = useState(false);
     const navigate = useNavigate();
-    const { user, loading } = useAuth(); // <--- bez logout
 
-    // Prosta funkcja logout
+    // Funkcja pobierająca usera z backendu
+    const fetchUser = async () => {
+        setLoading(true);
+        try {
+            const res = await axios.get('/api/user/me', { withCredentials: true });
+            setUser(res.data);
+            setSessionExpired(false);
+        } catch (err: any) {
+            // 401 = wygaśnięta sesja (refresh mógł już się nie udać)
+            setUser(null);
+            setSessionExpired(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Pierwszy fetch oraz poll co minutę
+    useEffect(() => {
+        fetchUser();
+        const interval = setInterval(fetchUser, POLL_INTERVAL);
+        return () => clearInterval(interval);
+        // eslint-disable-next-line
+    }, []);
+
+    // Wyloguj usera — wyczyść sesję po stronie backendu i wróć do loginu
     const handleLogout = () => {
-        localStorage.clear();
-        navigate('/login');
+        axios.post('/api/auth/logout', {}, { withCredentials: true })
+            .finally(() => {
+                setSessionExpired(false);
+                setUser(null);
+                navigate('/login');
+            });
     };
 
     if (loading) {
@@ -46,7 +89,6 @@ const Layout: React.FC = () => {
                 Twoja przeglądarka nie obsługuje formatu video.
             </video>
 
-
             <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
                     {/* LEWA STRONA */}
@@ -80,6 +122,22 @@ const Layout: React.FC = () => {
             <Container sx={{ mt: '124px', position: 'relative', zIndex: 1 }}>
                 <Outlet />
             </Container>
+
+            {/* Powiadomienie o wygaśnięciu sesji */}
+            <Snackbar open={sessionExpired} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+                <Alert
+                    severity="warning"
+                    sx={{ width: '100%', fontSize: 18 }}
+                    action={
+                        <Button color="inherit" size="small" onClick={handleLogout}>
+                            Zaloguj się ponownie
+                        </Button>
+                    }
+                >
+                    Twoja sesja wygasła lub zostałeś wylogowany.<br />
+                    {user ? 'Zostaniesz wylogowany.' : 'Zaloguj się ponownie, aby kontynuować.'}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 };

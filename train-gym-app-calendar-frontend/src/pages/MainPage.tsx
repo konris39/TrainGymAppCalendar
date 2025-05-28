@@ -12,9 +12,8 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
-// Typ treningu:
 type RecommendedTraining = {
     id: number;
     name: string;
@@ -32,10 +31,7 @@ const MainPage: React.FC = () => {
 
     const fetchTrainings = () => {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        axios.get('/api/recommended-trainings', {
-            headers: { Authorization: `Bearer ${token}` }
-        })
+        api.get<RecommendedTraining[]>('/api/recommended-trainings')
             .then(res => {
                 setTrainings(res.data);
                 const types: string[] = Array.from(new Set(res.data.map((t: RecommendedTraining) => t.type)));
@@ -73,10 +69,7 @@ const MainPage: React.FC = () => {
     const handleGetNewRecommended = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-            await axios.post('/api/recommended-trainings/assign-to-user', {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.post('/api/recommended-trainings/assign-to-user', {});
             fetchTrainings();
         } catch (e) {
             alert('Błąd podczas przypisywania nowych treningów!');

@@ -7,7 +7,7 @@ import {
     Button
 } from '@mui/material';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import dayjs, { Dayjs } from 'dayjs';
 
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -28,13 +28,8 @@ const EditWorkoutPage: React.FC = () => {
 
     useEffect(() => {
         if (!id) return;
-        const token = localStorage.getItem('token');
-        if (!token) {
-            setErrorMessage('Brak tokenu. Zaloguj się.');
-            return;
-        }
-        axios
-            .get(`/api/training/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        api
+            .get(`/api/training/${id}`)
             .then(res => {
                 setEventName(res.data.name);
                 setEventDate(dayjs(res.data.trainingDate));
@@ -51,15 +46,11 @@ const EditWorkoutPage: React.FC = () => {
             return;
         }
         try {
-            await axios.patch(
-                `/api/training/update/${id}`,
-                {
-                    name: eventName,
-                    trainingDate: eventDate?.format('YYYY-MM-DD'),
-                    description
-                },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.patch(`/api/training/update/${id}`, {
+                name: eventName,
+                trainingDate: eventDate?.format('YYYY-MM-DD'),
+            description
+            });
             navigate(from);
         } catch {
             setErrorMessage('Nie udało się zaktualizować treningu.');

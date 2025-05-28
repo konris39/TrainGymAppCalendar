@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Paper, Typography, TextField, Button, Grid } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 const RegisterPage: React.FC = () => {
     const navigate = useNavigate();
@@ -13,7 +13,7 @@ const RegisterPage: React.FC = () => {
     const handleRegister = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/auth/register', { name, mail, password });
+            const response = await api.post('/api/auth/register', { name, mail, password });
             console.log('Register response:', response.data);
             navigate('/login');
         } catch (error: any) {

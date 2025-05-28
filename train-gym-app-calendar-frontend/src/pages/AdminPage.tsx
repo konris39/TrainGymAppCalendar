@@ -5,7 +5,7 @@ import {
     TextField, CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
@@ -39,9 +39,7 @@ const AdminPage: React.FC = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token') ?? '';
-            const res = await axios.get<User[]>('/api/user', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await api.get<User[]>('/api/user');
             setUsers(res.data);
         } catch (err) {
             console.error('Could not fetch users', err);
@@ -67,9 +65,7 @@ const AdminPage: React.FC = () => {
     const saveName = async (id: number) => {
         try {
             const token = localStorage.getItem('token') ?? '';
-            await axios.patch(`/api/user/updateName/${id}`, { name: editedName }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.patch(`/api/user/update/${id}`, { name: editedName });
             setEditingId(null);
             fetchUsers();
         } catch (err) {
@@ -80,9 +76,7 @@ const AdminPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
             const token = localStorage.getItem('token') ?? '';
-            await axios.delete(`/api/user/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.delete(`/api/user/${id}`);
             fetchUsers();
         } catch (err) {
             console.error('Failed to delete user', err);
