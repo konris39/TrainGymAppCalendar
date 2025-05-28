@@ -31,15 +31,21 @@ const Layout: React.FC = () => {
                 autoPlay loop muted playsInline preload="auto"
                 onCanPlayThrough={() => setVideoLoaded(true)}
                 style={{
-                    position: 'absolute', inset: 0, objectFit: 'cover',
-                    zIndex: -1, opacity: videoLoaded ? 1 : 0,
-                    width: '100%', height: 'auto', minHeight: '100vh',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    width: '100vw',
+                    height: '100vh',
+                    objectFit: 'cover',
+                    zIndex: -1,
+                    opacity: videoLoaded ? 1 : 0,
                     transition: 'opacity 0.8s ease-in-out'
                 }}
             >
                 <source src="/videos/background.mp4" type="video/mp4" />
                 Twoja przeglądarka nie obsługuje formatu video.
             </video>
+
 
             <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
                 <Toolbar sx={{ justifyContent: 'space-between' }}>

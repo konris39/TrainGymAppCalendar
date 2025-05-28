@@ -45,5 +45,5 @@ function App(): JSX.Element {
         </Router>
     );
 }
-
+// TO DO ILOSC POWIADOMIEN i kafka do pokazywania ze siema zrob cos
 export default App;
