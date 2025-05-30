@@ -1,9 +1,16 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import ztpai.proj.TrainGymAppCalendarBackend.models.DataUser;
@@ -12,31 +19,41 @@ import ztpai.proj.TrainGymAppCalendarBackend.repository.DataUserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.security.JwtUtil;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin
 public class AuthController {
 
     private final UserRepository userRepository;
     private final DataUserRepository dataUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final UserDetailsService userDetailsService;
+
+    private static final long ACCESS_TOKEN_MAX_AGE = 2 * 60 * 60;
+    private static final long REFRESH_TOKEN_MAX_AGE = 1 * 60 * 60;
 
     @Autowired
-    public AuthController(UserRepository userRepository, DataUserRepository dataUserRepository,PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthController(UserRepository userRepository,
+                          DataUserRepository dataUserRepository,
+                          PasswordEncoder passwordEncoder,
+                          JwtUtil jwtUtil,
+                          UserDetailsService userDetailsService) {
         this.userRepository = userRepository;
         this.dataUserRepository = dataUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.userDetailsService = userDetailsService;
     }
 
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody User user){
-        if (userRepository.findByMail(user.getMail()).isPresent()){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Użytkownik o podanym mailu już istnieje!");
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<String> register(@Valid @RequestBody User user) {
+        if (userRepository.findByMail(user.getMail()).isPresent()) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                                 .body("Użytkownik o podanym mailu już istnieje!");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userRepository.save(user);
@@ -44,23 +61,110 @@ public class AuthController {
         DataUser dataUser = new DataUser();
         dataUser.setUser(savedUser);
         dataUserRepository.save(dataUser);
+
         return ResponseEntity.status(HttpStatus.CREATED).body("Użytkownik utworzony!");
     }
 
-    @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request){
-        Optional<User> userOptional = userRepository.findByMail(request.getMail());
-        if(userOptional.isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nieprawidłowy email lub hasło");
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request,
+                                      HttpServletResponse response) {
+        Optional<User> userOpt = userRepository.findByMail(request.getMail());
+        if (userOpt.isEmpty() ||
+            !passwordEncoder.matches(request.getPassword(), userOpt.get().getPassword())) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .build();
+        }
+        User user = userOpt.get();
+
+        String accessToken  = jwtUtil.generateToken(user);
+        String refreshToken = jwtUtil.generateRefreshToken(user);
+
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(ACCESS_TOKEN_MAX_AGE)
+            .sameSite("Lax")
+            .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+            .httpOnly(true)
+            .secure(false)
+            .path("/api/auth")
+            .maxAge(REFRESH_TOKEN_MAX_AGE)
+            .sameSite("Lax")
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Void> refreshToken(HttpServletRequest request,
+                                             HttpServletResponse response) {
+        String refreshToken = Arrays.stream(Optional.ofNullable(request.getCookies()).orElse(new Cookie[0]))
+            .filter(c -> c.getName().equals("refreshToken"))
+            .map(Cookie::getValue)
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Brak refreshToken"));
+
+        String username = jwtUtil.extractUsernameFromRefresh(refreshToken);
+        UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+        if (!jwtUtil.validateRefreshToken(refreshToken, userDetails)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User user = userOptional.get();
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Nieprawidłowy email lub hasło");
-        }
+        User user = userRepository.findByMail(username)
+                                  .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
 
-        String token = jwtUtil.generateToken(user);
-        return ResponseEntity.ok(new JwtResponse(token));
+        String newAccess  = jwtUtil.generateToken(user);
+        String newRefresh = jwtUtil.generateRefreshToken(user);
+
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", newAccess)
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(ACCESS_TOKEN_MAX_AGE)
+            .sameSite("Lax")
+            .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", newRefresh)
+            .httpOnly(true)
+            .secure(false)
+            .path("/api/auth")
+            .maxAge(REFRESH_TOKEN_MAX_AGE)
+            .sameSite("Lax")
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletResponse response) {
+        ResponseCookie clearAccess = ResponseCookie.from("accessToken", "")
+            .httpOnly(true)
+            .secure(false)
+            .path("/")
+            .maxAge(0)
+            .sameSite("Lax")
+            .build();
+
+        ResponseCookie clearRefresh = ResponseCookie.from("refreshToken", "")
+            .httpOnly(true)
+            .secure(false)
+            .path("/api/auth")
+            .maxAge(0)
+            .sameSite("Lax")
+            .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccess.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefresh.toString());
+
+        return ResponseEntity.noContent().build();
     }
 }
