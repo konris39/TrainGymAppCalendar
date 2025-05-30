@@ -20,7 +20,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/training")
-@CrossOrigin
 public class TrainingController {
 
     private final TrainingService trainingService;

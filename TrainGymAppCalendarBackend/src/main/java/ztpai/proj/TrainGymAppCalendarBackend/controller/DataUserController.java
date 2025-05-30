@@ -13,7 +13,6 @@ import ztpai.proj.TrainGymAppCalendarBackend.service.DataUserService;
 
 @RestController
 @RequestMapping("api/data")
-@CrossOrigin
 public class DataUserController {
 
     private final DataUserService dataUserService;

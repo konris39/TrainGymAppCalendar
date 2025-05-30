@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/user")
-@CrossOrigin
 public class UserController {
 
     private final UserService userService;
@@ -41,6 +40,18 @@ public class UserController {
                 .map(userService::toUserResponseDto)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getMe() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return userService.findByMail(auth.getName())
+                .map(userService::toUserResponseDto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build());
     }
 
     @GetMapping("/{id}")

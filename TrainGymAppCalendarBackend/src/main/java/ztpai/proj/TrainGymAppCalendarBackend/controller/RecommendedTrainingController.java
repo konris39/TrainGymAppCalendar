@@ -21,7 +21,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/recommended-trainings")
-@CrossOrigin
 public class RecommendedTrainingController {
 
     private final RecommendedTrainingService recService;
@@ -56,18 +55,15 @@ public class RecommendedTrainingController {
     ) {
         User user = getCurrentUser();
 
-        // 1) pobierz szablon
         RecommendedTrainings template = recService.findEntityById(id)
             .orElseThrow(() -> new RuntimeException("Szablon nie istnieje"));
 
-        // 2) przygotuj TrainingCreateDto
         TrainingCreateDto create = new TrainingCreateDto();
         create.setName(template.getName());
         create.setDescription(template.getDescription());
         create.setTrainingDate(dto.getTrainingDate());
-        create.setAskTrainer(false);  // z szablonu zawsze accepted
+        create.setAskTrainer(false);
 
-        // 3) deleguj do TrainingService
         TrainingResponseDto saved = trainingService.createTraining(user.getId(), create);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
