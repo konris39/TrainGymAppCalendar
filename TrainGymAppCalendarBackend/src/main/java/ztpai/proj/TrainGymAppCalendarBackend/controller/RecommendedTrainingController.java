@@ -16,7 +16,12 @@ import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.service.RecommendedTrainingService;
 import ztpai.proj.TrainGymAppCalendarBackend.service.TrainingService;
 import ztpai.proj.TrainGymAppCalendarBackend.service.UserService;
-
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import java.util.List;
 
 @RestController
@@ -35,11 +40,62 @@ public class RecommendedTrainingController {
         this.trainingService = trainingService;
     }
 
+    @Operation(
+            summary = "Pobierz wszystkie rekomendowane treningi",
+            description = "Zwraca listę wszystkich dostępnych szablonów rekomendowanych treningów (RecommendedTrainingDto).",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Lista rekomendowanych treningów",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(type = "array", implementation = RecommendedTrainingDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Błąd serwera podczas pobierania szablonów",
+                            content = @Content(schema = @Schema(type = "string"))
+                    )
+            }
+    )
     @GetMapping("")
     public List<RecommendedTrainingDto> getAll() {
         return recService.findAll();
     }
 
+    @Operation(
+            summary = "Pobierz rekomendowany trening po ID",
+            description = "Zwraca pojedynczy szablon rekomendowanego treningu (RecommendedTrainingDto) na podstawie przekazanego identyfikatora.",
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "ID szablonu rekomendowanego treningu",
+                            required = true,
+                            schema = @Schema(type = "integer", example = "1")
+                    )
+            },
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Znaleziono szablon rekomendowanego treningu",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = RecommendedTrainingDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Nie znaleziono szablonu o podanym ID",
+                            content = @Content(schema = @Schema(type = "string"))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Nieprawidłowy format ID",
+                            content = @Content(schema = @Schema(type = "string"))
+                    )
+            }
+    )
     @GetMapping("/{id}")
     public ResponseEntity<RecommendedTrainingDto> getById(@PathVariable Integer id) {
         return recService.findByIdDto(id)
@@ -47,7 +103,52 @@ public class RecommendedTrainingController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-
+    @Operation(
+            summary = "Zaplanuj trening na podstawie rekomendowanego szablonu",
+            description = "Na podstawie wskazanego szablonu (ID) tworzy nowy trening (TrainingResponseDto) dla aktualnie zalogowanego użytkownika. " +
+                    "Data wykonania treningu pobierana jest z pola `trainingDate` w ScheduleRecommendedDto. " + "Jeśli szablon nie istnieje, zwraca 404.",
+            parameters = {
+                    @Parameter(
+                            name = "id",
+                            description = "ID szablonu rekomendowanego treningu",
+                            required = true,
+                            schema = @Schema(type = "integer", example = "1")
+                    )
+            },
+            requestBody = @RequestBody(
+                    description = "Obiekt JSON zawierający pole `trainingDate` (ScheduleRecommendedDto)",
+                    required = true,
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ScheduleRecommendedDto.class)
+                    )
+            ),
+            responses = {
+                    @ApiResponse(
+                            responseCode = "201",
+                            description = "Pomyślnie utworzono nowy trening na podstawie rekomendacji",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(implementation = TrainingResponseDto.class)
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Nie znaleziono szablonu rekomendowanego treningu o podanym ID",
+                            content = @Content(schema = @Schema(type = "string"))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Błąd walidacji danych wejściowych (np. brak `trainingDate`)",
+                            content = @Content(schema = @Schema(type = "string"))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Użytkownik niezalogowany (brak tokena lub sesji)",
+                            content = @Content(schema = @Schema(type = "string"))
+                    )
+            }
+    )
     @PostMapping("/{id}/schedule")
     public ResponseEntity<TrainingResponseDto> schedule(
             @PathVariable Integer id,
@@ -69,6 +170,27 @@ public class RecommendedTrainingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
+    @Operation(
+            summary = "Przypisz wszystkie rekomendowane treningi do użytkownika",
+            description = "Dla zalogowanego użytkownika przypisuje wszystkie dostępne szablony rekomendowanych treningów.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Pomyślnie przypisano wszystkie rekomendowane treningi do użytkownika",
+                            content = @Content(schema = @Schema(type = "string"))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Nie znaleziono zalogowanego użytkownika w bazie",
+                            content = @Content(schema = @Schema(type = "string"))
+                    ),
+                    @ApiResponse(
+                            responseCode = "401",
+                            description = "Użytkownik niezalogowany (brak tokena lub sesji)",
+                            content = @Content(schema = @Schema(type = "string"))
+                    )
+            }
+    )
     @PostMapping("/assign-to-user")
     public ResponseEntity<Void> assignAllToUser(Authentication auth) {
         User user = userService.findByMail(auth.getName())

@@ -1,5 +1,9 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,6 +22,7 @@ import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.DataUserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.security.JwtUtil;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -48,6 +53,26 @@ public class AuthController {
         this.userDetailsService = userDetailsService;
     }
 
+    @Operation(
+            summary = "Rejestracja nowego użytkownika",
+            description = "Dodaje nowego użytkownika do bazy. " + "Sprawdza, czy adres e-mail nie jest już zajęty, " +
+                    "haszuje hasło i tworzy podstawowe dane profilu.",
+            requestBody = @RequestBody(
+                    description = "Obiekt JSON zawierający pola: mail i password",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = User.class),
+                            mediaType = "application/json"
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Użytkownik został pomyślnie utworzony"),
+                    @ApiResponse(responseCode = "409", description = "Użytkownik o podanym mailu już istnieje",
+                            content = @Content(schema = @Schema(type = "string"))),
+                    @ApiResponse(responseCode = "400", description = "Błąd walidacji danych wejściowych",
+                            content = @Content(schema = @Schema(type = "string")))
+            }
+    )
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<String> register(@Valid @RequestBody User user) {
@@ -65,6 +90,27 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Użytkownik utworzony!");
     }
 
+    @Operation(
+            summary = "Logowanie użytkownika",
+            description = "Sprawdza, czy podany e-mail i hasło są poprawne. " +
+                    "W przypadku sukcesu generuje tokeny JWT (access + refresh) " +
+                    "i zapisuje je w ciasteczkach (`HttpOnly`).",
+            requestBody = @RequestBody(
+                    description = "Obiekt JSON z polami: mail i password",
+                    required = true,
+                    content = @Content(
+                            schema = @Schema(implementation = LoginRequest.class),
+                            mediaType = "application/json"
+                    )
+            ),
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Zalogowano pomyślnie (zestaw ciasteczek w nagłówku)"),
+                    @ApiResponse(responseCode = "401", description = "Nieprawidłowe dane logowania",
+                            content = @Content(schema = @Schema(type = "void"))),
+                    @ApiResponse(responseCode = "400", description = "Błąd walidacji payloadu",
+                            content = @Content(schema = @Schema(type = "string")))
+            }
+    )
     @PostMapping("/login")
     public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request,
                                       HttpServletResponse response) {
@@ -101,6 +147,18 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "Odświeżanie tokenów (access + refresh)",
+            description = "Sprawdza ciasteczko `refreshToken`. Jeśli jest ważne, generuje nowe " +
+                    "tokeny JWT i zwraca je w ciasteczkach. Jeśli token odświeżający jest niepoprawny lub wygasł, zwraca 401.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Wygenerowano nowe tokeny i zapisano w ciasteczkach"),
+                    @ApiResponse(responseCode = "401", description = "Brak lub nieważny token odświeżający",
+                            content = @Content(schema = @Schema(type = "void"))),
+                    @ApiResponse(responseCode = "500", description = "Błąd wewnętrzny podczas odczytu ciasteczka lub generowania tokena",
+                            content = @Content(schema = @Schema(type = "string")))
+            }
+    )
     @PostMapping("/refresh")
     public ResponseEntity<Void> refreshToken(HttpServletRequest request,
                                              HttpServletResponse response) {
@@ -144,6 +202,15 @@ public class AuthController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(
+            summary = "Wylogowanie użytkownika",
+            description = "Czyści ciasteczka `accessToken` oraz `refreshToken` (ustawia maksymalny wiek na 0), " + "w efekcie usuwa sesję JWT z przeglądarki.",
+            responses = {
+                    @ApiResponse(responseCode = "204", description = "Pomyślnie wylogowano (ciasteczka usunięte)"),
+                    @ApiResponse(responseCode = "500", description = "Błąd serwera podczas czyszczenia ciasteczek",
+                            content = @Content(schema = @Schema(type = "string")))
+            }
+    )
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletResponse response) {
         ResponseCookie clearAccess = ResponseCookie.from("accessToken", "")
