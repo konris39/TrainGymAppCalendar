@@ -30,12 +30,12 @@ public class DataUser {
     @Column(columnDefinition = "double precision default 0")
     private Double dl;
 
-    private Double sum;
-
     @OneToOne
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     @NotNull
     private User user;
+
+    private Double sum;
 
     public DataUser(){
     }

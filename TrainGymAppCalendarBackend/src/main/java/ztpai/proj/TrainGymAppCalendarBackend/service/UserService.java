@@ -90,6 +90,17 @@ public class UserService {
     }
 
     @Transactional
+    public UserResponseDto updateUserNameOnly(Integer userId, UserAdminUpdateDto dto) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setName(dto.getName());
+        User updatedUser = userRepository.save(user);
+
+        return toUserResponseDto(updatedUser);
+    }
+
+    @Transactional
     public void joinGroup(String trainerEmail, User currentUser) {
         User trainer = userRepository.findByMail(trainerEmail)
             .orElseThrow(() -> new RuntimeException("Nie znaleziono trenera o podanym mailu: " + trainerEmail));

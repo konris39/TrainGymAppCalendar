@@ -20,14 +20,14 @@ import { useTheme } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
-import axios from 'axios';
-import { useAuth } from '../useAuth'; // Dodaj tutaj swój hook
+import api from '../api/axios';
+import { useAuth } from '../useAuth';
 
 type UserData = {
     id: number;
     name: string;
     mail: string;
-    trainer?: boolean; // Dla pewności
+    trainer?: boolean;
 };
 
 type DataUser = {
@@ -64,7 +64,6 @@ const ProfilePage: React.FC = () => {
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    // Dialog do join group
     const [joinOpen, setJoinOpen] = useState(false);
     const [trainerEmail, setTrainerEmail] = useState('');
     const [joinLoading, setJoinLoading] = useState(false);
@@ -74,10 +73,8 @@ const ProfilePage: React.FC = () => {
     const token = localStorage.getItem('token');
 
     const fetchProfile = async () => {
-        if (!token) return;
         try {
-            // Pobierz POJEDYNCZY obiekt, nie tablicę!
-            const res = await axios.get<DataUser>('/api/data/my', { headers: { Authorization: `Bearer ${token}` } });
+            const res = await api.get<DataUser>('/api/data/my');
             const fetched = res.data;
             setDataUser(fetched);
             setInitialDataUser(fetched);
@@ -118,12 +115,12 @@ const ProfilePage: React.FC = () => {
         const promises: Promise<any>[] = [];
         if (editName !== dataUser.user.name) {
             promises.push(
-                axios.patch(`/api/user/updateName/${userId}`, { name: editName }, { headers: { Authorization: `Bearer ${token}` } })
-            );
+                api.patch(`/api/user/updateName/${userId}`, { name: editName })
+                );
         }
         if (editMail !== dataUser.user.mail) {
             promises.push(
-                axios.patch(`/api/user/updateMail/${userId}`, { mail: editMail }, { headers: { Authorization: `Bearer ${token}` } })
+                api.patch(`/api/user/updateMail/${userId}`, { mail: editMail })
             );
         }
         const patchData: Partial<DataUser> = {};
@@ -135,8 +132,8 @@ const ProfilePage: React.FC = () => {
         if (editDL !== dataUser.dl) patchData.dl = editDL;
         if (Object.keys(patchData).length) {
             promises.push(
-                axios.patch('/api/data/update', patchData, { headers: { Authorization: `Bearer ${token}` } })
-            );
+                api.patch('/api/data/update', patchData)
+                );
         }
         try {
             await Promise.all(promises);
@@ -155,7 +152,7 @@ const ProfilePage: React.FC = () => {
     const confirmDelete = async () => {
         if (!token || deleteId === null) return;
         try {
-            await axios.delete(`/api/data/${deleteId}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/api/data/${deleteId}`);
             setConfirmOpen(false);
             await fetchProfile();
         } catch (err) {
@@ -174,11 +171,7 @@ const ProfilePage: React.FC = () => {
             return;
         }
         try {
-            await axios.post(
-                '/api/user/joinGroup',
-                { trainerEmail },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            await api.post('/api/user/joinGroup', { trainerEmail });
             setJoinSuccess(true);
             setTrainerEmail('');
             setJoinOpen(false);

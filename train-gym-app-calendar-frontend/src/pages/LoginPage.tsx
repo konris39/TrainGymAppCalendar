@@ -9,13 +9,17 @@ const LoginPage: React.FC = () => {
     const [password, setPassword] = useState<string>('');
     const [errorMessage, setErrorMessage] = useState<string>('');
 
-    const handleLogin = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/auth/login', { mail, password });
-            const { token } = response.data;
-            localStorage.setItem('token', token);
-            console.log('Response token:', token);
+            // 1) POST z withCredentials, żeby ciasteczka HttpOnly przyszły z serwera
+            await axios.post(
+                '/api/auth/login',
+                { mail, password },
+                { withCredentials: true }
+            );
+
+            // 2) Jeśli status 200, jesteś już zalogowany (ciasteczko z accessToken ustawione)
             navigate('/main');
         } catch (error: any) {
             console.error('Login error:', error);

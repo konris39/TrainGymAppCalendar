@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Paper, Typography, IconButton, Button } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import dayjs from 'dayjs';
 
 import EditIcon from '@mui/icons-material/Edit';
@@ -20,8 +20,8 @@ const TrainingDetailPage: React.FC = () => {
             setErrorMessage('Brak tokenu. Proszę się zalogować.');
             return;
         }
-        axios
-            .get(`/api/training/${id}`, { headers: { Authorization: `Bearer ${token}` } })
+        api
+            .get(`/api/training/${id}`)
             .then((res) => setTraining(res.data))
             .catch(() => setErrorMessage('Nie udało się pobrać danych treningu.'));
     }, [id]);
@@ -32,9 +32,9 @@ const TrainingDetailPage: React.FC = () => {
 
     const handleComplete = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token') ?? '';
             if (!token) return;
-            await axios.patch(`/api/training/complete/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            await api.patch(`/api/training/complete/${id}`);
             window.location.reload();
         } catch {
             setErrorMessage('Nie udało się oznaczyć treningu jako ukończonego.');
@@ -43,9 +43,9 @@ const TrainingDetailPage: React.FC = () => {
 
     const handleDelete = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token') ?? '';
             if (!token) return;
-            await axios.delete(`/api/training/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            await api.delete(`/api/training/${id}`);
             navigate('/calendar');
         } catch {
             setErrorMessage('Nie udało się usunąć treningu.');
