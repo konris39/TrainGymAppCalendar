@@ -25,25 +25,21 @@ export const useAuth = (): {
     const fetchUser = async () => {
       setLoading(true);
       try {
-        // 1. Próbujemy pobrać dane użytkownika (tu przykładowo /api/user/ME)
         const res = await axios.get('/api/user/me', { withCredentials: true });
         if (isMounted) {
           setUser(res.data);
           setSessionExpired(false);
         }
       } catch (err: any) {
-        // 2. Jeśli 401, spróbuj refresh:
         if (err?.response?.status === 401) {
           try {
             await axios.post('/api/auth/refresh', {}, { withCredentials: true });
-            // Retry
             const res2 = await axios.get('/api/user/me', { withCredentials: true });
             if (isMounted) {
               setUser(res2.data);
               setSessionExpired(false);
             }
           } catch (refreshErr) {
-            // Refresh nie powiódł się
             if (isMounted) {
               setUser(null);
               setSessionExpired(true);

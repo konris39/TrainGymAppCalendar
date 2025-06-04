@@ -19,7 +19,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import dayjs from 'dayjs';
 
 interface Workout {
@@ -28,7 +28,7 @@ interface Workout {
     description: string;
     trainingDate: string;
     completed: boolean;
-    accepted: boolean; // <-- dodane pole
+    accepted: boolean;
 }
 
 const YourWorkoutsPage: React.FC = () => {
@@ -40,15 +40,14 @@ const YourWorkoutsPage: React.FC = () => {
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') ?? '';
         if (!token) return;
-        axios
-            .get<Workout[]>('/api/training/my', { headers: { Authorization: `Bearer ${token}` } })
+        api
+            .get<Workout[]>('/api/training/my')
             .then(res => setWorkouts(res.data))
             .catch(console.error);
     }, []);
 
-    // completed pierwsze sortowanie, potem oczekujące na akceptację
     const sortedWorkouts = [...workouts].sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
         if (a.accepted !== b.accepted) return a.accepted ? -1 : 1;
@@ -64,8 +63,8 @@ const YourWorkoutsPage: React.FC = () => {
     const markComplete = (id: number) => {
         const token = localStorage.getItem('token');
         if (!token) return;
-        axios
-            .patch(`/api/training/complete/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } })
+        api
+            .patch(`/api/training/complete/${id}`)
             .then(() => window.location.reload())
             .catch(console.error);
     };
@@ -82,8 +81,8 @@ const YourWorkoutsPage: React.FC = () => {
         if (!deleteId) return;
         const token = localStorage.getItem('token');
         if (!token) return;
-        axios
-            .delete(`/api/training/${deleteId}`, { headers: { Authorization: `Bearer ${token}` } })
+        api
+            .delete(`/api/training/${deleteId}`)
             .then(() => window.location.reload())
             .catch(console.error);
     };
@@ -129,7 +128,7 @@ const YourWorkoutsPage: React.FC = () => {
                                     : awaitingAcceptance
                                     ? 0.4
                                     : 1,
-                                pointerEvents: w.completed || awaitingAcceptance ? 'none' : 'auto' // blokuje przyciski jeśli completed lub oczekuje
+                                pointerEvents: w.completed || awaitingAcceptance ? 'none' : 'auto'
                             }}
                         >
                             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -226,7 +225,7 @@ const YourWorkoutsPage: React.FC = () => {
                     );
                 })}
 
-                {/* Delete Confirmation */}
+                {}
                 <Dialog open={confirmOpen} onClose={cancelDelete}>
                     <DialogTitle>Confirm Delete</DialogTitle>
                     <DialogContent>

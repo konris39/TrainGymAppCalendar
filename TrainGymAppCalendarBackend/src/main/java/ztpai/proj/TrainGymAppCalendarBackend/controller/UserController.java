@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.JoinGroupDto;
+import ztpai.proj.TrainGymAppCalendarBackend.dto.UserAdminUpdateDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.UserResponseDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.UserUpdateDto;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
@@ -103,6 +104,24 @@ public class UserController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PatchMapping("/updateAdm/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserResponseDto> updateUserAdm(
+            @PathVariable Integer id,
+            @Valid @RequestBody UserAdminUpdateDto dto
+    ) {
+        UserResponseDto updated = userService.updateUserNameOnly(id, dto);
+        return ResponseEntity.ok(updated);
+    }
+    @DeleteMapping("/deleteAdm/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteUserByIdAdm(@PathVariable Integer id) {
+        if(userService.deleteUserById(id)){
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @PostMapping("/joinGroup")

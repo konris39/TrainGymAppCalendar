@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Container, Typography, Paper, Box, IconButton, CircularProgress } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
-import axios from 'axios';
+import api from '../api/axios';
 
 interface Training {
     id: number;
@@ -19,26 +19,22 @@ const TrainerPanelPage: React.FC = () => {
     useEffect(() => {
         const fetchTrainings = async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await axios.get('/api/training/to-accept', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setTrainings(res.data);
-            } catch {
-                setTrainings([]);
-            } finally {
-                setLoading(false);
-            }
-        };
+                const token = localStorage.getItem('token') ?? '';
+                const res = await api.get('/api/training/to-accept');
+                    setTrainings(res.data);
+                } catch {
+                    setTrainings([]);
+                } finally {
+                    setLoading(false);
+                }
+            };
         fetchTrainings();
     }, []);
 
     const acceptTraining = async (id: number) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.patch(`/api/training/accept/${id}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await api.patch(`/api/training/accept/${id}`);
             setTrainings(t => t.filter(tr => tr.id !== id));
         } catch (err) {
             alert('Nie udało się zaakceptować treningu.');
@@ -47,10 +43,8 @@ const TrainerPanelPage: React.FC = () => {
 
     const declineTraining = async (id: number) => {
         try {
-            const token = localStorage.getItem('token');
-            await axios.patch(`/api/training/decline/${id}`, {}, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const token = localStorage.getItem('token') ?? '';
+            await api.patch(`/api/training/decline/${id}`, {});
             setTrainings(t => t.filter(tr => tr.id !== id));
         } catch (err) {
             alert('Nie udało się odrzucić treningu.');

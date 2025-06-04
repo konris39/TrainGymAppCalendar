@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 
-const POLL_INTERVAL = 60_000; // 1 minuta
+const POLL_INTERVAL = 60_000;
 
 type User = {
     id: number;
@@ -23,7 +23,6 @@ const Layout: React.FC = () => {
     const [videoLoaded, setVideoLoaded] = useState(false);
     const navigate = useNavigate();
 
-    // Funkcja pobierająca usera z backendu
     const fetchUser = async () => {
         setLoading(true);
         try {
@@ -31,7 +30,6 @@ const Layout: React.FC = () => {
             setUser(res.data);
             setSessionExpired(false);
         } catch (err: any) {
-            // 401 = wygaśnięta sesja (refresh mógł już się nie udać)
             setUser(null);
             setSessionExpired(true);
         } finally {
@@ -39,15 +37,12 @@ const Layout: React.FC = () => {
         }
     };
 
-    // Pierwszy fetch oraz poll co minutę
     useEffect(() => {
         fetchUser();
         const interval = setInterval(fetchUser, POLL_INTERVAL);
         return () => clearInterval(interval);
-        // eslint-disable-next-line
     }, []);
 
-    // Wyloguj usera — wyczyść sesję po stronie backendu i wróć do loginu
     const handleLogout = () => {
         axios.post('/api/auth/logout', {}, { withCredentials: true })
             .finally(() => {
@@ -91,7 +86,7 @@ const Layout: React.FC = () => {
 
             <AppBar position="static" sx={{ backgroundColor: '#000' }} elevation={0}>
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
-                    {/* LEWA STRONA */}
+                    {}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                         <Typography
                             variant="h6"
@@ -101,7 +96,7 @@ const Layout: React.FC = () => {
                             Train Gym App
                         </Typography>
                     </Box>
-                    {/* PRAWA STRONA */}
+                    {}
                     <Box sx={{ display: 'flex', gap: 3 }}>
                         {user?.trainer && (
                             <Button sx={{ color: '#fff' }} onClick={() => navigate('/trainer-panel')}>Trainer Panel</Button>
@@ -123,8 +118,29 @@ const Layout: React.FC = () => {
                 <Outlet />
             </Container>
 
-            {/* Powiadomienie o wygaśnięciu sesji */}
-            <Snackbar open={sessionExpired} anchorOrigin={{ vertical: 'top', horizontal: 'center' }}>
+            {}
+            {sessionExpired && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 1999,
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        pointerEvents: 'all',
+                        cursor: 'not-allowed',
+                    }}
+                />
+            )}
+
+            {}
+            <Snackbar
+                open={sessionExpired}
+                anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+                sx={{
+                    zIndex: 2000,
+                    pointerEvents: 'auto',
+                }}
+            >
                 <Alert
                     severity="warning"
                     sx={{ width: '100%', fontSize: 18 }}

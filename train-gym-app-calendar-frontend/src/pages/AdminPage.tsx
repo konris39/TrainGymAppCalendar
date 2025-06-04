@@ -65,7 +65,7 @@ const AdminPage: React.FC = () => {
     const saveName = async (id: number) => {
         try {
             const token = localStorage.getItem('token') ?? '';
-            await api.patch(`/api/user/update/${id}`, { name: editedName });
+            await api.patch(`/api/user/updateAdm/${id}`, { name: editedName });
             setEditingId(null);
             fetchUsers();
         } catch (err) {
@@ -76,7 +76,7 @@ const AdminPage: React.FC = () => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
             const token = localStorage.getItem('token') ?? '';
-            await api.delete(`/api/user/${id}`);
+            await api.delete(`/api/user/deleteAdm/${id}`);
             fetchUsers();
         } catch (err) {
             console.error('Failed to delete user', err);

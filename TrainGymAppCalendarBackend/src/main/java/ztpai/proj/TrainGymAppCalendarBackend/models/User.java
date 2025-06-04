@@ -36,6 +36,18 @@ public class User {
     @Column(name="is_admin", nullable = false, columnDefinition = "boolean default false")
     private boolean admin;
 
+    @OneToMany(mappedBy = "trainer", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<UserGroup> asTrainer = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<UserGroup> asClient  = new HashSet<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private DataUser dataUser;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private Set<Training> trainings = new HashSet<>();
+
     @ManyToMany
     @JoinTable(name = "user_recommended_trainings", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "recommended_training_id"))
     private Set<RecommendedTrainings> recommendedTrainings = new HashSet<>();
@@ -50,6 +62,14 @@ public class User {
         this.trainer = trainer;
         this.admin = admin;
     }
+
+    public DataUser getDataUser() {
+        return dataUser;
+    }
+    public void setDataUser(DataUser dataUser) {
+        this.dataUser = dataUser;
+    }
+
     public void setId(Integer id) {
         this.id = id;
     }

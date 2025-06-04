@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
     Container,
     Paper,
@@ -18,9 +19,12 @@ import api from '../api/axios';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 const AddEventPage: React.FC = () => {
-    const [eventName, setEventName] = useState('');
+    const location = useLocation();
+    const state = location.state as { name?: string; description?: string } | undefined;
+
+    const [eventName, setEventName] = useState(state?.name || '');
     const [eventDate, setEventDate] = useState<Dayjs | null>(null);
-    const [description, setDescription] = useState('');
+    const [description, setDescription] = useState(state?.description || '');
     const [askTrainer, setAskTrainer] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -34,7 +38,6 @@ const AddEventPage: React.FC = () => {
         color: 'rgba(80,80,80,1)',
         '&.Mui-focused': { color: 'black' }
     };
-
     const inputOutlineStyle = {
         '& .MuiOutlinedInput-root': {
             '& fieldset': { borderColor: 'rgba(100,100,100,0.6)' },
@@ -50,7 +53,6 @@ const AddEventPage: React.FC = () => {
         '& .MuiPickersCalendarHeader-switchHeader': { backgroundColor: '#222', color: '#fff' },
         '& .MuiPickersDay-dayOutsideMonth': { opacity: 0.3 }
     };
-
     const textFieldFocusOverride = {
         '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
             borderColor: '#000 !important'
@@ -73,7 +75,7 @@ const AddEventPage: React.FC = () => {
                 trainingDate: eventDate.format('YYYY-MM-DD'),
                 description,
                 askTrainer
-                });
+            });
             window.location.href = '/your-workouts';
         } catch {
             setErrorMessage('Nie udało się dodać wydarzenia.');
@@ -144,7 +146,6 @@ const AddEventPage: React.FC = () => {
                         sx={{ ...inputOutlineStyle, ...floatLabelStyle, ...textFieldFocusOverride }}
                     />
 
-                    {/* CHECKBOX dla askTrainer */}
                     <FormControlLabel
                         control={
                             <Checkbox
