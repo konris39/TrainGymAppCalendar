@@ -158,7 +158,6 @@ public class RecommendedTrainingController {
     public ResponseEntity<TrainingResponseDto> schedule(
             @PathVariable Integer id,
             @Valid
-            // TU musi być SPRINGOWE @RequestBody (z pakietu org.springframework.web.bind.annotation)
             @org.springframework.web.bind.annotation.RequestBody ScheduleRecommendedDto dto
     ) {
         User user = getCurrentUser();

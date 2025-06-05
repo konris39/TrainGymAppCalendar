@@ -27,6 +27,7 @@ import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.DataUserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.security.JwtUtil;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -41,8 +42,8 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserDetailsService userDetailsService;
 
-    private static final long ACCESS_TOKEN_MAX_AGE = 2 * 60 * 60;   // 2 godziny w sekundach
-    private static final long REFRESH_TOKEN_MAX_AGE = 1 * 60 * 60;  // 1 godzina w sekundach
+    private static final long ACCESS_TOKEN_MAX_AGE = 2 * 60 * 60;
+    private static final long REFRESH_TOKEN_MAX_AGE = 1 * 60 * 60;
 
     @Autowired
     public AuthController(UserRepository userRepository,
@@ -57,9 +58,6 @@ public class AuthController {
         this.userDetailsService = userDetailsService;
     }
 
-    //=======================================
-    //   REJESTRACJA
-    //=======================================
     @Operation(
             summary = "Rejestracja nowego użytkownika",
             description = "Dodaje nowego użytkownika do bazy. Sprawdza, czy adres e-mail nie jest już zajęty, "
@@ -94,16 +92,13 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<String> register(
             @Valid
-            // To musi być SPRINGOWE @RequestBody (pakiet org.springframework.web.bind.annotation)
             @org.springframework.web.bind.annotation.RequestBody UserRegisterDto dto
     ) {
-        // Sprawdzamy, czy mail już istnieje
         if (userRepository.findByMail(dto.getMail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Użytkownik o podanym mailu już istnieje!");
         }
 
-        // Tworzymy encję User na podstawie DTO
         User user = new User();
         user.setName(dto.getName());
         user.setMail(dto.getMail());
@@ -113,7 +108,6 @@ public class AuthController {
 
         User savedUser = userRepository.save(user);
 
-        // Tworzymy podstawowe DataUser dla nowego użytkownika
         DataUser dataUser = new DataUser();
         dataUser.setUser(savedUser);
         dataUserRepository.save(dataUser);
@@ -121,9 +115,6 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Użytkownik utworzony!");
     }
 
-    //=======================================
-    //   LOGOWANIE
-    //=======================================
     @Operation(
             summary = "Logowanie użytkownika",
             description = "Sprawdza, czy podany mail i hasło są poprawne. "

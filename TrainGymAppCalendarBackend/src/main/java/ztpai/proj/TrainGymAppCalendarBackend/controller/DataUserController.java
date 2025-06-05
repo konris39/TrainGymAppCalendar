@@ -13,6 +13,12 @@ import ztpai.proj.TrainGymAppCalendarBackend.dto.DataUserUpdateDto;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.service.DataUserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

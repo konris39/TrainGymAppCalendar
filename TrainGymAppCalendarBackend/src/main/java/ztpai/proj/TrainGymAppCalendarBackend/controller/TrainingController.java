@@ -19,14 +19,12 @@ import ztpai.proj.TrainGymAppCalendarBackend.repository.GroupRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.TrainingRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.service.TrainingService;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-
 import java.util.List;
 
 @RestController
@@ -148,7 +146,6 @@ public class TrainingController {
     @PostMapping("/add")
     public ResponseEntity<TrainingResponseDto> addTrainingToUser(
             @Valid
-            // TU musi być SPRINGOWE @RequestBody
             @org.springframework.web.bind.annotation.RequestBody TrainingCreateDto dto
     ) {
         User currentUser = getCurrentUser();
@@ -244,6 +241,7 @@ public class TrainingController {
             @org.springframework.web.bind.annotation.RequestBody TrainingUpdateDto dto,
             @PathVariable Integer id
     ) {
+
         User currentUser = getCurrentUser();
         return trainingService.updateTraining(currentUser.getId(), id, dto)
                 .map(ResponseEntity::ok)
