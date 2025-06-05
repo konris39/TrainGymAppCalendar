@@ -157,7 +157,7 @@ public class RecommendedTrainingController {
         User user = getCurrentUser();
 
         RecommendedTrainings template = recService.findEntityById(id)
-            .orElseThrow(() -> new RuntimeException("Szablon nie istnieje"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Szablon rekomendowanego treningu nie istnieje"));
 
         TrainingCreateDto create = new TrainingCreateDto();
         create.setName(template.getName());

@@ -1,6 +1,5 @@
 package ztpai.proj.TrainGymAppCalendarBackend.repository;
 
-import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.jpa.repository.JpaRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 

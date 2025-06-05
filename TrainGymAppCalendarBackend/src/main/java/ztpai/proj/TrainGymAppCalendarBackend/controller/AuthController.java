@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import ztpai.proj.TrainGymAppCalendarBackend.dto.UserRegisterDto;
 import ztpai.proj.TrainGymAppCalendarBackend.models.DataUser;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.DataUserRepository;
@@ -75,12 +76,17 @@ public class AuthController {
     )
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<String> register(@Valid @RequestBody User user) {
+    public ResponseEntity<String> register(@Valid @RequestBody UserRegisterDto dto) {
+        User user = new User();
+        user.setName(dto.getName());
+        user.setMail(dto.getMail());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+
         if (userRepository.findByMail(user.getMail()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                                 .body("Użytkownik o podanym mailu już istnieje!");
+                    .body("Użytkownik o podanym mailu już istnieje!");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+
         User savedUser = userRepository.save(user);
 
         DataUser dataUser = new DataUser();
@@ -89,6 +95,7 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED).body("Użytkownik utworzony!");
     }
+
 
     @Operation(
             summary = "Logowanie użytkownika",

@@ -39,7 +39,7 @@ public TrainingResponseDto createTraining(Integer userId, TrainingCreateDto dto)
     training.setName(dto.getName());
     training.setDescription(dto.getDescription());
     training.setTrainingDate(dto.getTrainingDate());
-    training.setAccepted(!dto.isAskTrainer()); // jeśli askTrainer = true => accepted = false
+    training.setAccepted(!dto.isAskTrainer());
     training.setCompleted(false);
     training.setUser(user);
 
