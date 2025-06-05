@@ -1,12 +1,15 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
 import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import ztpai.proj.TrainGymAppCalendarBackend.dto.*;
+
+import ztpai.proj.TrainGymAppCalendarBackend.dto.DataUserResponseDto;
+import ztpai.proj.TrainGymAppCalendarBackend.dto.DataUserUpdateDto;
 import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.repository.UserRepository;
 import ztpai.proj.TrainGymAppCalendarBackend.service.DataUserService;
@@ -17,8 +20,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 @RestController
-@RequestMapping("api/data")
+@RequestMapping("/api/data")
 public class DataUserController {
 
     private final DataUserService dataUserService;
@@ -99,7 +109,10 @@ public class DataUserController {
             }
     )
     @PatchMapping("/update")
-    public ResponseEntity<DataUserResponseDto> updateUserDataByUserId(@Valid @RequestBody DataUserUpdateDto dto) {
+    public ResponseEntity<DataUserResponseDto> updateUserDataByUserId(
+            @Valid
+            @org.springframework.web.bind.annotation.RequestBody DataUserUpdateDto dto
+    ) {
         User currentUser = getCurrentUser();
         return dataUserService.updateByUserId(currentUser.getId(), dto)
                 .map(ResponseEntity::ok)
@@ -109,10 +122,16 @@ public class DataUserController {
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || auth.getName() == null) {
-            throw new ResponseStatusException(org.springframework.http.HttpStatus.UNAUTHORIZED, "Brak zalogowanego użytkownika.");
+            throw new ResponseStatusException(
+                    org.springframework.http.HttpStatus.UNAUTHORIZED,
+                    "Brak zalogowanego użytkownika."
+            );
         }
         String email = auth.getName();
         return userRepository.findByMail(email)
-                .orElseThrow(() -> new ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika."));
+                .orElseThrow(() -> new ResponseStatusException(
+                        org.springframework.http.HttpStatus.NOT_FOUND,
+                        "Nie znaleziono użytkownika."
+                ));
     }
 }

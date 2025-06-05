@@ -1,6 +1,7 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -8,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
 import ztpai.proj.TrainGymAppCalendarBackend.dto.JoinGroupDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.UserAdminUpdateDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.UserResponseDto;
@@ -18,10 +20,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -59,15 +61,17 @@ public class UserController {
             }
     )
     @GetMapping("")
-    public ResponseEntity<List<UserResponseDto>> findAll(){
+    public ResponseEntity<List<UserResponseDto>> findAll() {
         User currentUser = getCurrentUser();
-        if (!currentUser.getAdmin()){
+        if (!currentUser.getAdmin()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+
         List<UserResponseDto> users = userService.findAll()
                 .stream()
                 .map(userService::toUserResponseDto)
                 .collect(Collectors.toList());
+
         return ResponseEntity.ok(users);
     }
 
@@ -85,7 +89,7 @@ public class UserController {
                     ),
                     @ApiResponse(
                             responseCode = "401",
-                            description = "Użytkownik niezalogowany lub brak sesji",
+                            description = "Użytkownik niezalogowany",
                             content = @Content(schema = @Schema(type = "string"))
                     )
             }
@@ -135,9 +139,9 @@ public class UserController {
             }
     )
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDto> findByUserId(@PathVariable Integer id){
+    public ResponseEntity<UserResponseDto> findByUserId(@PathVariable Integer id) {
         User currentUser = getCurrentUser();
-        if(!currentUser.getId().equals(id)){
+        if (!currentUser.getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return userService.findById(id)
@@ -192,9 +196,13 @@ public class UserController {
             }
     )
     @PatchMapping("/update/{id}")
-    public ResponseEntity<UserResponseDto> updateUser(@PathVariable Integer id, @Valid @RequestBody UserUpdateDto dto) {
+    public ResponseEntity<UserResponseDto> updateUser(
+            @PathVariable Integer id,
+            @Valid
+            @org.springframework.web.bind.annotation.RequestBody UserUpdateDto dto
+    ) {
         User currentUser = getCurrentUser();
-        if(!currentUser.getId().equals(id)){
+        if (!currentUser.getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         UserResponseDto updated = userService.updateUser(id, dto);
@@ -231,12 +239,12 @@ public class UserController {
             }
     )
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Integer id){
+    public ResponseEntity<Void> deleteUserById(@PathVariable Integer id) {
         User currentUser = getCurrentUser();
-        if(!currentUser.getId().equals(id)){
+        if (!currentUser.getId().equals(id)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        if(userService.deleteUserById(id)){
+        if (userService.deleteUserById(id)) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
@@ -284,9 +292,12 @@ public class UserController {
     )
     @PatchMapping("/updateRoles/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponseDto> updateUserRoles(@PathVariable Integer id, @RequestBody UserUpdateDto dto) {
+    public ResponseEntity<UserResponseDto> updateUserRoles(
+            @PathVariable Integer id,
+            @org.springframework.web.bind.annotation.RequestBody UserUpdateDto dto
+    ) {
         UserResponseDto updated = userService.updateUserRoles(id, dto);
-        if(updated != null) {
+        if (updated != null) {
             return ResponseEntity.ok(updated);
         } else {
             return ResponseEntity.notFound().build();
@@ -335,7 +346,11 @@ public class UserController {
     )
     @PatchMapping("/updateAdm/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserResponseDto> updateUserAdm(@PathVariable Integer id, @Valid @RequestBody UserAdminUpdateDto dto) {
+    public ResponseEntity<UserResponseDto> updateUserAdm(
+            @PathVariable Integer id,
+            @Valid
+            @org.springframework.web.bind.annotation.RequestBody UserAdminUpdateDto dto
+    ) {
         UserResponseDto updated = userService.updateUserNameOnly(id, dto);
         return ResponseEntity.ok(updated);
     }
@@ -372,7 +387,7 @@ public class UserController {
     @DeleteMapping("/deleteAdm/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUserByIdAdm(@PathVariable Integer id) {
-        if(userService.deleteUserById(id)){
+        if (userService.deleteUserById(id)) {
             return ResponseEntity.noContent().build();
         }
         return ResponseEntity.notFound().build();
@@ -408,15 +423,15 @@ public class UserController {
             }
     )
     @PostMapping("/joinGroup")
-    public ResponseEntity<Void> joinGroup(@RequestBody JoinGroupDto dto) {
+    public ResponseEntity<Void> joinGroup(
+            @org.springframework.web.bind.annotation.RequestBody JoinGroupDto dto
+    ) {
         User currentUser = getCurrentUser();
         try {
             userService.joinGroup(dto.getTrainerEmail(), currentUser);
             return ResponseEntity.status(HttpStatus.CREATED).build();
         } catch (RuntimeException ex) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .build();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 

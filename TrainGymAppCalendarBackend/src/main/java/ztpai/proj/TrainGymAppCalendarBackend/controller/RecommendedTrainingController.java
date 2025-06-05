@@ -1,12 +1,14 @@
 package ztpai.proj.TrainGymAppCalendarBackend.controller;
 
 import jakarta.validation.Valid;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+
 import ztpai.proj.TrainGymAppCalendarBackend.dto.RecommendedTrainingDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.ScheduleRecommendedDto;
 import ztpai.proj.TrainGymAppCalendarBackend.dto.TrainingCreateDto;
@@ -16,12 +18,14 @@ import ztpai.proj.TrainGymAppCalendarBackend.models.User;
 import ztpai.proj.TrainGymAppCalendarBackend.service.RecommendedTrainingService;
 import ztpai.proj.TrainGymAppCalendarBackend.service.TrainingService;
 import ztpai.proj.TrainGymAppCalendarBackend.service.UserService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+
 import java.util.List;
 
 @RestController
@@ -105,8 +109,9 @@ public class RecommendedTrainingController {
 
     @Operation(
             summary = "Zaplanuj trening na podstawie rekomendowanego szablonu",
-            description = "Na podstawie wskazanego szablonu (ID) tworzy nowy trening (TrainingResponseDto) dla aktualnie zalogowanego użytkownika. " +
-                    "Data wykonania treningu pobierana jest z pola `trainingDate` w ScheduleRecommendedDto. " + "Jeśli szablon nie istnieje, zwraca 404.",
+            description = "Na podstawie wskazanego szablonu (ID) tworzy nowy trening (TrainingResponseDto) dla aktualnie zalogowanego użytkownika. "
+                    + "Data wykonania treningu pobierana jest z pola `trainingDate` w ScheduleRecommendedDto. "
+                    + "Jeśli szablon nie istnieje, zwraca 404.",
             parameters = {
                     @Parameter(
                             name = "id",
@@ -152,12 +157,13 @@ public class RecommendedTrainingController {
     @PostMapping("/{id}/schedule")
     public ResponseEntity<TrainingResponseDto> schedule(
             @PathVariable Integer id,
-            @Valid @RequestBody ScheduleRecommendedDto dto
+            @Valid
+            @org.springframework.web.bind.annotation.RequestBody ScheduleRecommendedDto dto
     ) {
         User user = getCurrentUser();
 
         RecommendedTrainings template = recService.findEntityById(id)
-            .orElseThrow(() -> new RuntimeException("Szablon nie istnieje"));
+                .orElseThrow(() -> new RuntimeException("Szablon nie istnieje"));
 
         TrainingCreateDto create = new TrainingCreateDto();
         create.setName(template.getName());
@@ -195,7 +201,7 @@ public class RecommendedTrainingController {
     public ResponseEntity<Void> assignAllToUser(Authentication auth) {
         User user = userService.findByMail(auth.getName())
                 .orElseThrow(() ->
-                    new ResponseStatusException(HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika.")
+                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika.")
                 );
 
         recService.assignAllRecommendedToUser(user.getId());
@@ -204,8 +210,13 @@ public class RecommendedTrainingController {
 
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Brak zalogowanego użytkownika.");
+        }
         String email = auth.getName();
         return userService.findByMail(email)
-                .orElseThrow(() -> new RuntimeException("Nie znaleziono użytkownika"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Nie znaleziono użytkownika."
+                ));
     }
 }
